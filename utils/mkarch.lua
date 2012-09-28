@@ -2,6 +2,7 @@ local IS_WINDOWS = package.config:sub(1,1) == '\\'
 
 local ZipWriter = require "ZipWriter"
 local PATH      = require "path"
+PATH.findfile   = require "path.findfile"
 local lfs       = require "lfs"
 
 local TEXT_EXT = {".lua", ".txt", ".c", ".cpp", ".h", ".hpp", ".pas", ".cxx", ".me"}
@@ -20,9 +21,9 @@ local function make_file_desc(path)
 
   if not (desc.isfile or desc.isdir) then error('file not found :' .. path .. ' (' .. fullpath .. ')') end
 
-  desc.mtime = PATH.getmtime(fullpath)
-  desc.ctime = PATH.getctime(fullpath)
-  desc.atime = PATH.getatime(fullpath)
+  desc.mtime = PATH.mtime(fullpath)
+  desc.ctime = PATH.ctime(fullpath)
+  desc.atime = PATH.atime(fullpath)
 
   local ext = desc.isfile and PATH.extension(fullpath)
   desc.istext = ext and isin(ext, TEXT_EXT)
@@ -52,54 +53,7 @@ local function file_writer(path)
   ,function(...) return f:seek(...) end
 end
 
-local function matchfiles(mask, recursive, cb)
-  local function filePat2rexPat(pat)
-    local pat = pat:gsub("%.","%%%."):gsub("%*",".*"):gsub("%?", ".")
-    if IS_WINDOWS then pat = pat:upper() end
-    return pat
-  end
-
-  local basepath,mask = PATH.splitpath(mask)
-  mask = filePat2rexPat(mask)
-
-  local function match(s, pat)
-    if IS_WINDOWS then s = string.upper(s) end
-    return nil ~= string.find(s, pat)
-  end
-
-  local function filelist (path, pat, cb)
-    for file in lfs.dir(path) do if file ~= "." and file ~= ".." then
-      local cur_file = PATH.join(path, file)
-      if PATH.isfile(cur_file) then
-        if match(file, pat) then 
-          cb(path, file)
-        end
-      end
-    end end
-    return true
-  end
-
-  local function filelist_recurcive (path, pat, cb)
-    filelist(path, pat, cb)
-    for file in lfs.dir(path) do if file ~= "." and file ~= ".." then
-      local cur_dir = PATH.join(path, file)
-      if PATH.isdir(cur_dir) then
-        files = filelist_recurcive(cur_dir, pat, cb)
-      end
-    end end
-    return true
-  end
-
-  if recursive then
-    return filelist_recurcive(basepath, mask, cb)
-  end
-  return filelist(basepath, mask, cb)
-end
-
-if not arg[1] then
-  print("Usage: mkarch <archive_name> [<file_mask>]")
-  return
-end
+io.stdout:setvbuf'no'
 
 local oFile = assert(arg[1])
 local mask  = arg[2] or "*.*"
@@ -111,11 +65,10 @@ if PATH.extension(oFile):lower() ~= '.zip' then
 end
 
 local files = {}
-matchfiles(mask, true, function(path, name) 
-  local fullpath = PATH.fullpath(PATH.join(path,name))
+for fullpath in PATH.findfile(mask,{recurse = true;skipdirs = false}) do
   local relpath = string.sub(fullpath, #base + 1)
   table.insert(files,{fullpath, relpath})
-end)
+end
 
 writer = ZipWriter.new{
   level = ZipWriter.COMPRESSION_LEVEL.DEFAULT;

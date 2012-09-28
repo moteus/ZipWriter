@@ -13,7 +13,7 @@ if IS_WINDOWS then
 
   if not DateToFileTime then
     local alien = prequire "alien"
-    if false and alien then
+    if alien then
       local kernel32 = assert(alien.load("kernel32.dll"))
       local SYSTEMTIME = alien.defstruct{
         {"wYear","ushort" };
