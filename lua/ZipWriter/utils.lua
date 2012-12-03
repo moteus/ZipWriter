@@ -1,10 +1,12 @@
+local IS_LUA52 = not rawget(_G, 'setfenv')
+
 local function prequire(m) 
   local ok, err = pcall(require, m) 
   if not ok then return nil, err end
   return err
 end
 
-local bit   = require "bit"
+local bit   = require( IS_LUA52 and "bit32" or "bit" )
 local date  = prequire "ZipWriter.date"
 
 local IS_WINDOWS = (package.config:sub(1,1) == '\\')
@@ -47,5 +49,6 @@ M.loc2utf8       = locale2utf8
 M.loc2dos        = locale2dos
 M.time2dos       = time2dos
 M.time2filetime  = time2filetime
+M.bit            = bit
 
 return M

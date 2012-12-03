@@ -8,6 +8,12 @@ local table_concat = table.concat
 
 local pairs,assert,setmetatable = pairs,assert,setmetatable
 
+local unpack = unpack or table.unpack
+local math_mod = function(...) 
+  local a,b = math.modf(...)
+  return b
+end
+
 local converter_t = {
   int64  = {"i8",8};
   uint64 = {"I8",8};
@@ -55,7 +61,7 @@ local converter = {
 converter.unpack_array = function(art, data, size)
   if not size then
     local elem_size = struct_size(art)
-    assert(0 == math.mod(#data, elem_size))
+    assert(0 == math_mod(#data, elem_size))
     size = math.floor(#data / elem_size)
   end
   local fmt = string.rep(art, size)

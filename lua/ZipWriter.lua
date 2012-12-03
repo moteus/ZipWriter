@@ -1,7 +1,8 @@
+
 local zlib             = require "zlib"
-local bit              = require "bit"
 local utils            = require "ZipWriter.utils"
 local stream_converter = require "ZipWriter.binary_converter"
+local bit              = utils.bit
 
 local sc = stream_converter
 
