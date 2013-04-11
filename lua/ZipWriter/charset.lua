@@ -22,7 +22,7 @@ __call = function(self, to, from)
 end;
 }
 
-local ok, iconv = pcall( require, "iconv" ) 
+local ok, iconv = pcall( require, "iconv" )
 if ok then
   make_iconv = function (to,from)
     local c = iconv.new(to,from)
@@ -33,6 +33,10 @@ if ok then
 end
 
 local M = {}
+
+function M.pass_thrue_only()
+  return not iconv
+end
 
 function M.supported(to, from)
   return M[to][from] ~= pass_thrue

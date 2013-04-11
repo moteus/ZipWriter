@@ -431,7 +431,7 @@ function ZipWriter:write(
   local flags      = self:use_utf8() and ZIP_FLAGS.UTF8 or 0
   local level      = self.private_.level
   local method     = level.method
-  local attri     = level.method
+  local attri      = level.method
 
   local extra      = ""
   local crc        = zlib.crc32()

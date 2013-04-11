@@ -7,12 +7,22 @@ end
 local DEFAULT_CP = 1251
 local LOCAL_CP
 
-local alien = prequire "alien"
-if alien then
-  local kernel32 = assert(alien.load("kernel32.dll"))
-  local GetACP = assert(kernel32.GetACP) -- win2k+
-  GetACP:types{abi="stdcall", ret = "int"}
-  LOCAL_CP = GetACP()
+if not LOCAL_CP then -- ffi
+  local ffi = prequire "ffi"
+  if ffi then
+    ffi.cdef"uint32_t __stdcall GetACP();"
+    LOCAL_CP = ffi.C.GetACP()
+  end
+end
+
+if not LOCAL_CP then -- alien
+  local alien = prequire "alien"
+  if alien then
+    local kernel32 = assert(alien.load("kernel32.dll"))
+    local GetACP = assert(kernel32.GetACP) -- win2k+
+    GetACP:types{abi="stdcall", ret = "int"}
+    LOCAL_CP = GetACP()
+  end
 end
 
 -- MSDN Code Page Identifiers
