@@ -16,6 +16,7 @@ description = {
 
 dependencies = {
   "lua >= 5.1",
+  "struct >= 1.2",
   "bit32",
   "lzlib",
   -- "lua-iconv >= 7.0",  -- optional
