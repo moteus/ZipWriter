@@ -1,5 +1,5 @@
 package = "ZipWriter"
-version = "0.1.0-2"
+version = "0.1.0-1"
 source = {
   url = "https://github.com/moteus/ZipWriter/archive/v0.1.0.zip",
   dir = "ZipWriter-0.1.0",
