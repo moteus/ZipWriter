@@ -1,5 +1,5 @@
 package = "ZipWriter"
-version = "0.1.0-1"
+version = "0.1.0-2"
 source = {
   url = "https://github.com/moteus/ZipWriter/archive/v0.1.0.zip",
   dir = "ZipWriter-0.1.0",
@@ -39,7 +39,7 @@ build = {
     ["ZipWriter" ]                 = "lua/ZipWriter.lua",
     ["ZipWriter.binary_converter"] = "lua/ZipWriter/binary_converter.lua",
     ["ZipWriter.charset"]          = "lua/ZipWriter/charset.lua",
-    ["ZipWriter.message"]          = "lua/ZipWriter/utils.lua",
+    ["ZipWriter.utils"]            = "lua/ZipWriter/utils.lua",
   }
 }
 
