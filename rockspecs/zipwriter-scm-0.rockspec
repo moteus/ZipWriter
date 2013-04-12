@@ -7,7 +7,7 @@ source = {
 
 description = {
   summary = "Library for creating ZIP archive for Lua 5.1/5.2",
-  homepage = "https://github.com/ZipWriter/lua-pop3",
+  homepage = "https://github.com/ZipWriter",
   detailed = [[This package provides a library to create zip archives.
   This library support non seekable streams (e.g. socket) and ZIP64 format.
   ]],
@@ -39,7 +39,7 @@ build = {
     ["ZipWriter" ]                 = "lua/ZipWriter.lua",
     ["ZipWriter.binary_converter"] = "lua/ZipWriter/binary_converter.lua",
     ["ZipWriter.charset"]          = "lua/ZipWriter/charset.lua",
-    ["ZipWriter.message"]          = "lua/ZipWriter/utils.lua",
+    ["ZipWriter.utils"]            = "lua/ZipWriter/utils.lua",
   }
 }
 
