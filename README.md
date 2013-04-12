@@ -5,7 +5,7 @@ Based on http://wiki.tcl.tk/15158
 
 - lzlib
 - struct
-- bit   (only for Lua 5.1)
+- bit32 or bit
 - iconv (if not found then file names passed as is)
 - alien/ffi (on Windos detect system default codepage)
 - lunit (only for test)

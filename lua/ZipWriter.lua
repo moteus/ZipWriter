@@ -1,3 +1,6 @@
+---
+-- @module ZipWriter
+-- Based on http://wiki.tcl.tk/15158
 
 local zlib             = require "zlib"
 local utils            = require "ZipWriter.utils"
@@ -292,6 +295,28 @@ local function zip_make_extra(HID, data)
   return stream_converter.pack(STRUCT_CDH_EXTRA_RECORD, HID, #data, data)
 end
 
+--- Supported compression levels.
+-- @table COMPRESSION_LEVEL
+-- @field NO
+-- @field DEFAULT
+-- @field SPEED
+-- @field BEST
+
+--- Params that describe file or directory
+-- @table FILE_DESCRIPTION
+-- @tfield boolean isfile
+-- @tfield boolean isdir
+-- @tfield boolean istext
+-- @tfield number mtime last modification time. If nil then os.clock used.
+-- @tfield number ctime
+-- @tfield number atime
+-- @tfield number exattrib on Windows it can be result of GetFileAttributes
+-- @tfield ?string data file content
+
+---
+-- @type ZipWriter 
+--
+
 local ZipWriter = {}
 ZipWriter.__index = ZipWriter
 
@@ -309,16 +334,20 @@ function ZipWriter:new(options)
   return t
 end
 
----
--- @public
+--- Set compression level
+-- @tparam table lvl {value=compression level, flag=compression flag, method=compression method }
+-- 
+-- @see COMPRESSION_LEVEL
 function ZipWriter:set_level(lvl)
   if lvl then assert(lvl.value and lvl.flag and lvl.method, "Invalid compression level value")
   else lvl = ZIP_COMPRESSION_LEVEL.DEFAULT_COMPRESSION end
   self.private_.level = lvl
 end
 
----
--- @public
+--- Set stream as output
+-- @param stream have to support write method.
+--    Also strean can support seek method.
+-- @tparam[opt] boolean autoclose if true then steam:close is called
 function ZipWriter:open_stream(stream, autoclose)
   if self.private_.stream == stream then return self end
   self:open_writer(
@@ -329,14 +358,15 @@ function ZipWriter:open_stream(stream, autoclose)
       end
       return stream:write(chunk)
     end,
-    function(...)   return stream:seek(...) end
+    stream.seek and function(...) return stream:seek(...) end or nil
   )
   self.private_.stream = stream 
   return self
 end
 
----
--- @public
+--- Set writer as output
+-- @param writer callable object. This function called when there is a new chunk of data.
+-- @param[opt] seek callable object.
 function ZipWriter:open_writer(writer, seek)
   if self.private_.writer == writer then return self end
   self.private_.seek      = seek
@@ -407,18 +437,11 @@ function ZipWriter:write_fmt_(...)
   return self:write_(struct_pack(...))
 end
 
----
--- @public
--- based on http://wiki.tcl.tk/15158
--- @param fileDesc = {}
--- @field fileDesc.isfile
--- @field fileDesc.isdir
--- @field fileDesc.istext
--- @field fileDesc.mtime if nil then used os.clock
--- @field fileDesc.ctime 
--- @field fileDesc.atime
--- @field fileDesc.exattrib
--- @field fileDesc.data if exists then `reader` ignoring
+--- Add one file to archive.
+-- @tparam string fileName
+-- @tparam FILE_DESCRIPTION fileDesc
+-- @tparam ?callable reader must return nil on end of data
+-- @tparam ?string comment
 function ZipWriter:write(
   fileName, fileDesc,
   reader, comment
@@ -655,8 +678,8 @@ function ZipWriter:write(
   return true
 end
 
----
--- @public
+--- Close archive.
+-- @tparam ?string comment
 function ZipWriter:close(comment)
   local headers = self.private_.headers
   local stream  = self.private_.stream
@@ -695,15 +718,17 @@ function ZipWriter:close(comment)
     #comment, comment
   )
 
-  
-
   self.private_.writer()
   return filenum;
 end
 
+---
+-- @section end
+
 local rawget, upper, error, tostring, setmetatable = rawget, string.upper, error,tostring, setmetatable
 
 local M = {}
+
 
 M.COMPRESSION_LEVEL = setmetatable({
     NO       = assert(ZIP_COMPRESSION_LEVEL.NO_COMPRESSION);
@@ -717,14 +742,20 @@ M.COMPRESSION_LEVEL = setmetatable({
   end
 });
 
+--- Create new `ZipWriter` object
+-- @tparam table {utf8 = false, zip64 = false, level = DEFAULT}
 function M.new(...)
   local t = ZipWriter:new(...)
   return t
 end
 
 
----
--- @usage writer = co_writer(function(reader) ... end)
+--- Run coroutine and return writer function
+--
+-- @usage
+-- writer = co_writer(function(reader) ... end)
+--
+-- @see co_reader
 function M.co_writer(fn)
   local reciver, err = coroutine.create(function ()
     local reader = function ()
@@ -743,8 +774,35 @@ function M.co_writer(fn)
   return writer
 end
 
----
--- @usage reader = co_reader(function(writer) ... end)
+--- Run coroutine and return reader function
+--
+-- @usage
+-- reader = co_reader(function(writer) ... end)
+--
+-- @usage
+--
+-- local function put(reader)
+--   local chunk, err
+--   while true do
+--     chunk, err = reader()
+--     if not chunk then break end
+--     print(chunk) -- proceed data
+--   end
+-- end
+--
+-- local function get(writer)
+--   local t = {1111,2222,3333,4444,5555}
+--   for k, v in ipairs(t) do 
+--     writer(tostring(v)) -- send data
+--   end
+--   writer() -- EOS
+-- end
+--
+-- get(ZipWriter.co_writer(put))
+-- put(ZipWriter.co_reader(get))
+--
+-- @see co_writer
+--
 function M.co_reader(fn)
   local sender, err = coroutine.create(function ()
     local writer = function (chunk)
@@ -763,7 +821,32 @@ function M.co_reader(fn)
   return reader
 end
 
----
+--- Create new sink that write result to `ZipWriter`
+--
+-- @usage 
+-- local ZipStream = ZipWriter.new()
+-- 
+-- -- write to ftp
+-- --[=[ lua 5.1 needs coco
+-- ZipStream:open_writer(ZipWriter.co_writer(function(reader)
+--   FTP.put{
+--     path = 'test.zip';
+--     src  = reader;
+--   }
+-- end))
+-- --]=]
+-- 
+-- -- write to file 
+-- ZipStream:open_stream(assert(io.open('test.zip', 'wb+'))
+-- 
+-- -- read from FTP
+-- FTP.get{
+--   -- ftp params ...
+--   path = 'test.txt'
+--   sink = ZipWriter.sink(ZipStream, 'test.txt', {isfile=true;istext=1})
+-- }
+-- 
+-- ZipStream:close()
 --
 function M.sink(stream, fname, desc)
   return M.co_writer(function(reader)
@@ -795,63 +878,5 @@ function M.source(stream, files)
   end)
 end
 
-
-
----
--- @usage
---[[
-
-local function put(reader)
-  local chunk, err
-  while true do
-    chunk, err = reader()
-    if not chunk then break end
-    print(chunk) -- proceed data
-  end
-end
-
-local function get(writer)
-  local t = {1111,2222,3333,4444,5555}
-  for k, v in ipairs(t) do 
-    writer(tostring(v)) -- send data
-  end
-  writer() -- EOS
-end
-
-
-get(ZipWriter.co_writer(put))
-put(ZipWriter.co_reader(get))
-
---]]
-
----
--- @usage 
---[[
-
-local ZipStream = ZipWriter.new()
-
--- write to ftp
---[=[ lua 5.1 needs coco
-ZipStream:open_writer(ZipWriter.co_writer(function(reader)
-  FTP.put{
-    path = 'test.zip';
-    src  = reader;
-  }
-end))
---]=]
-
--- write to file 
-ZipStream:open_stream(assert(io.open('test.zip', 'wb+'))
-
--- read from FTP
-FTP.get{
-  -- ftp params ...
-  path = 'test.txt'
-  sink = ZipWriter.sink(ZipStream, 'test.txt', {isfile=true;istext=1})
-}
-
-ZipStream:close()
-
---]]
 
 return M
