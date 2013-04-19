@@ -431,6 +431,24 @@ local function zip_proxy_stream(proxy, ...)
   return stream
 end
 
+local function table_stream(dst)
+  local size = 0
+  return {
+    write = function(self, chunk)
+      table.insert(dst, chunk)
+      size = size + #chunk
+    end;
+
+    close = function(self)
+      dst = nil
+      return size
+    end;
+
+    seekable = function()
+      return false
+    end;
+  }
+end
 -------------------------------------------------------------
 
 --- Supported compression levels.
@@ -688,20 +706,18 @@ function ZipWriter:write(
       size = #data
       crc = zlib.crc32(crc, data)
 
-      -- @fixme use stream interface
       local cdata
       if method == ZIP_COMPRESSION_METHOD.DEFLATE then
         cdata = {}
-        local zd = zlib.deflate(function(cd) table.insert(cdata,cd) end, level.value, method)
-        assert(zd:write(data))
-        zd:close()
-        cdata = table.concat(cdata):sub(3,-5) -- some magic
+        local zstream = zip_stream(table_stream(cdata), level.value, method)
+        zstream:write(data)
+        csize = zstream:close()
  
         -- if we can change method in LFH we can use it
-        if seekable and (not use_aes) and (#cdata > size) then
+        if seekable and (not use_aes) and (csize > size) then
           method = ZIP_COMPRESSION_METHOD.STORE
           cdata = data
-        end
+        else cdata = table.concat(cdata) end
       else 
         assert(method == ZIP_COMPRESSION_METHOD.STORE)
         cdata = data
