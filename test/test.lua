@@ -1,14 +1,32 @@
-local ZipWriter = require "ZipWriter"
 local base64    = require "base64"
-local memfile   = require "memoryfile"
-local lunit = require "lunitx"
 
 function DUMP(lvl, res)
   res = base64.decode(res)
-  local out = io.open(".\\" .. lvl .. ".zip", "wb")
+  print(#res)
+  local out = assert(io.open(lvl, "wb"))
   out:write(res)
   out:close()
 end
+
+function LOAD(fname)
+  local f = assert(io.open(fname, "rb"))
+  local res = f:read("*all")
+  f:close()
+  print( #res )
+  local enc = base64.encode(res)
+  assert(res == base64.decode(enc))
+  return enc
+end
+
+-- print( LOAD[[g:\lua\5.1\libs\ZipWriter\examples\test_64_no.zip]]) do return end
+
+local ZipWriter = require "ZipWriter"
+local memfile   = require "memoryfile"
+local lunit     = require "lunitx"
+local tutils    = require "utils"
+local TEST_CASE = tutils.TEST_CASE
+
+
 
 local ETALON = { -- make by winrar 3.93
   NO      = "UEsDBAoAAAAAADVwM0E6zD49KgAAACoAAAAIAAAAdGVzdC50eHQxMTExMTExMTExMTExMTExMTExMQ0KMjIyMjIyMjIyMjIyMjIyMjIyMjJQSwECFAAKAAAAAAA1cDNBOsw+PSoAAAAqAAAACAAAAAAAAAAAACAAAAAAAAAAdGVzdC50eHRQSwUGAAAAAAEAAQA2AAAAUAAAAAAA";
@@ -27,9 +45,7 @@ local fileDesc = {
   exattrib = 32, -- get from GetFileAttributesA
 }
 
-local TEST_NAME = 'ZipWriter read data'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+local _ENV = TEST_CASE'ZipWriter read data' do
 
 function setup()
   fileDesc.data = DATA
@@ -61,9 +77,9 @@ function test_()
   Make('BEST')
 end
 
-local TEST_NAME = 'ZipWriter reader'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+end
+
+local _ENV = TEST_CASE'ZipWriter reader' do
 
 local function Make(lvl)
   local out    = memfile.open("", "wb")
@@ -95,9 +111,9 @@ function test_()
   Make('BEST')
 end
 
-local TEST_NAME = 'ZipWriter sink'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+end
+
+local _ENV = TEST_CASE'ZipWriter sink' do
 
 local function Make(lvl)
   local out    = memfile.open("", "wb")
@@ -124,9 +140,9 @@ function test_()
   Make('BEST')
 end
 
-local TEST_NAME = 'ZipWriter source'
-if _VERSION >= 'Lua 5.2' then  _ENV = lunit.module(TEST_NAME,'seeall')
-else module( TEST_NAME, package.seeall, lunit.testcase ) end
+end
+
+local _ENV = TEST_CASE'ZipWriter source' do
 
 local ETALON = { -- testd with winrar 3.93 / 7-Zip 9.20.04 alpha
   NO      = [[UEsDBAoACAAAADVwM0EAAAAAAAAAAAAAAAAIAAAAdGVzdC50eHQxMTExMTExMTExMTExMTExMTExMQ0KMjIyMjIyMjIyMjIyMjIyMjIyMjJQSwcIOsw+PSoAAAAqAAAAUEsBAhQACgAIAAAANXAzQTrMPj0qAAAAKgAAAAgAAAAAAAAAAAAgAAAAAAAAAHRlc3QudHh0UEsFBgAAAAABAAEANgAAAGAAAAAAAA==]];
@@ -172,4 +188,90 @@ function test_()
   Make('DEFAULT')
   Make('SPEED')
   Make('BEST')
+end
+
+end
+
+local _ENV = TEST_CASE'ZipWriter ZIP64' do
+
+local ETALON = { -- testd with 7-Zip 9.20.04 alpha
+  NO      = [[UEsDBAoAAAAAADVwM0E6zD49//////////8IACAAdGVzdC50eHQBABwAKgAAAAAAAAAqAAAAAAAAAAAAAAAAAAAAAAAAADExMTExMTExMTExMTExMTExMTExDQoyMjIyMjIyMjIyMjIyMjIyMjIyMlBLAQIUAAoAAAAAADVwM0E6zD49//////////8IACAAAAAAAAAAIAAAAAAAAAB0ZXN0LnR4dAEAHAAqAAAAAAAAACoAAAAAAAAAAAAAAAAAAAAAAAAAUEsGBiwAAAAAAAAAPwA/AAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAFYAAAAAAAAAcAAAAAAAAABQSwYHAAAAAMYAAAAAAAAAAAAAAFBLBQYAAAAAAQABAFYAAABwAAAAAAA=]];
+  DEFAULT = [[UEsDBBQAAAAIADVwM0E6zD49//////////8IACAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAADM0xAS8XEZYAABQSwECFAAUAAAACAA1cDNBOsw+Pf//////////CAAgAAAAAAABACAAAAAAAAAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAAFBLBgYsAAAAAAAAAD8APwAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAABWAAAAAAAAAFAAAAAAAAAAUEsGBwAAAACmAAAAAAAAAAAAAABQSwUGAAAAAAEAAQBWAAAAUAAAAAAA]];
+  SPEED   = [[UEsDBBQABAAIADVwM0E6zD49//////////8IACAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAADM0xAS8XEZYAABQSwECFAAUAAQACAA1cDNBOsw+Pf//////////CAAgAAAAAAABACAAAAAAAAAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAAFBLBgYsAAAAAAAAAD8APwAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAABWAAAAAAAAAFAAAAAAAAAAUEsGBwAAAACmAAAAAAAAAAAAAABQSwUGAAAAAAEAAQBWAAAAUAAAAAAA]];
+  BEST    = [[UEsDBBQAAgAIADVwM0E6zD49//////////8IACAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAADM0xAS8XEZYAABQSwECFAAUAAIACAA1cDNBOsw+Pf//////////CAAgAAAAAAABACAAAAAAAAAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAAFBLBgYsAAAAAAAAAD8APwAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAABWAAAAAAAAAFAAAAAAAAAAUEsGBwAAAACmAAAAAAAAAAAAAABQSwUGAAAAAAEAAQBWAAAAUAAAAAAA]];
+}
+
+function setup()
+  fileDesc.data = DATA
+end
+
+function teardown()
+  fileDesc.data = nil
+end
+
+local function Make(lvl)
+  local out    = memfile.open("", "wb")
+
+  local writer = ZipWriter.new{
+    utf8 = false;
+    zip64 = true;
+    level = ZipWriter.COMPRESSION_LEVEL[lvl]
+  }
+  writer:open_stream(out)
+  writer:write('test.txt', fileDesc)
+  writer:close()
+
+  local res = base64.encode( tostring(out) )
+  assert( res == ETALON[ lvl:upper() ] )
+end
+
+function test_()
+  Make('NO')
+  Make('DEFAULT')
+  Make('SPEED')
+  Make('BEST')
+end
+
+end
+
+local _ENV = TEST_CASE'ZipWriter ZIP64 nonseekable' do
+
+local ETALON = { -- testd with 7-Zip 9.20.04 alpha
+  NO      = [[UEsDBAoACAAAADVwM0EAAAAA//////////8IACAAdGVzdC50eHQBABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADExMTExMTExMTExMTExMTExMTExDQoyMjIyMjIyMjIyMjIyMjIyMjIyMlBLBwg6zD49KgAAAAAAAAAqAAAAAAAAAFBLAQIUAAoACAAAADVwM0E6zD49//////////8IACAAAAAAAAAAIAAAAAAAAAB0ZXN0LnR4dAEAHAAqAAAAAAAAACoAAAAAAAAAAAAAAAAAAAAAAAAAUEsGBiwAAAAAAAAAPwA/AAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAFYAAAAAAAAAiAAAAAAAAABQSwYHAAAAAN4AAAAAAAAAAAAAAFBLBQYAAAAAAQABAFYAAACIAAAAAAA=]];
+  DEFAULT = [[UEsDBBQACAAIADVwM0EAAAAA//////////8IACAAdGVzdC50eHQBABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADM0xAS8XEZYAABQSwcIOsw+PQoAAAAAAAAAKgAAAAAAAABQSwECFAAUAAgACAA1cDNBOsw+Pf//////////CAAgAAAAAAABACAAAAAAAAAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAAFBLBgYsAAAAAAAAAD8APwAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAABWAAAAAAAAAGgAAAAAAAAAUEsGBwAAAAC+AAAAAAAAAAAAAABQSwUGAAAAAAEAAQBWAAAAaAAAAAAA]];
+  SPEED   = [[UEsDBBQADAAIADVwM0EAAAAA//////////8IACAAdGVzdC50eHQBABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADM0xAS8XEZYAABQSwcIOsw+PQoAAAAAAAAAKgAAAAAAAABQSwECFAAUAAwACAA1cDNBOsw+Pf//////////CAAgAAAAAAABACAAAAAAAAAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAAFBLBgYsAAAAAAAAAD8APwAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAABWAAAAAAAAAGgAAAAAAAAAUEsGBwAAAAC+AAAAAAAAAAAAAABQSwUGAAAAAAEAAQBWAAAAaAAAAAAA]];
+  BEST    = [[UEsDBBQACgAIADVwM0EAAAAA//////////8IACAAdGVzdC50eHQBABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADM0xAS8XEZYAABQSwcIOsw+PQoAAAAAAAAAKgAAAAAAAABQSwECFAAUAAoACAA1cDNBOsw+Pf//////////CAAgAAAAAAABACAAAAAAAAAAdGVzdC50eHQBABwAKgAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAAFBLBgYsAAAAAAAAAD8APwAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAABWAAAAAAAAAGgAAAAAAAAAUEsGBwAAAAC+AAAAAAAAAAAAAABQSwUGAAAAAAEAAQBWAAAAaAAAAAAA]];
+}
+
+function setup()
+  fileDesc.data = DATA
+end
+
+function teardown()
+  fileDesc.data = nil
+end
+
+local function Make(lvl)
+  local out    = memfile.open("", "wb")
+
+  local writer = ZipWriter.new{
+    utf8  = false;
+    zip64 = true;
+    level = ZipWriter.COMPRESSION_LEVEL[lvl]
+  }
+  writer:open_writer(function(data) if data then out:write(data) end end)
+  writer:write('test.txt', fileDesc)
+  writer:close()
+
+  local res = base64.encode( tostring(out) )
+  assert( res == ETALON[ lvl:upper() ], lvl )
+end
+
+function test_()
+  Make('NO')
+  Make('DEFAULT')
+  Make('SPEED')
+  Make('BEST')
+end
+
 end
