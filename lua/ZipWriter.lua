@@ -31,6 +31,7 @@ local time2filetime = utils.time2filetime
 local correct_crc   = assert(stream_converter.as_int32)
 local STRUCT        = assert(stream_converter.STRUCT)
 local struct_pack   = assert(stream_converter.pack)
+local uint8_t       = assert(stream_converter.uint8_t)
 local uint64_t      = assert(stream_converter.le_uint64_t)
 local uint32_t      = assert(stream_converter.le_uint32_t)
 local uint16_t      = assert(stream_converter.le_uint16_t)
@@ -148,6 +149,8 @@ local ZIP_FLAGS = {
   DEFLATE_MAXIMUM        = BIT[1];
   DEFLATE_FAST           = BIT[2];
   DEFLATE_SUPER_FAST     = bit.bor(BIT[1], BIT[2]);
+
+  ENCRYPT                = BIT[0]; -- general purpose bit flags
 }
 
 local ZIP_SIG = {
@@ -181,6 +184,7 @@ local ZIP_COMPRESSION_METHOD = {
        -- 18 - File is compressed using IBM TERSE (new)
        -- 19 - IBM LZ77 z Architecture (PFS)
        -- 98 - PPMd version I, Rev 1
+  AES     = 99;
 }
 
 local ZIP_VERSION_EXTRACT = {
@@ -283,6 +287,7 @@ local ZIP_CDH_EXTRA_ID = {
           --0x7855      -- Info-ZIP UNIX (new)
   MSOPGH = 0xa220;    -- Microsoft Open Packaging Growth Hint
           --0xfd4a      -- SMS/QDOS
+  AES    = 0x9901;
 }
 
 local STRUCT_CDH_EXTRA_RECORD = STRUCT{
@@ -291,9 +296,142 @@ local STRUCT_CDH_EXTRA_RECORD = STRUCT{
   pchar_t;  -- data
 }
 
+local STRUCT_AES_EXTRA = STRUCT{
+  uint16_t; -- Integer version number specific to the zip vendor(`AE` for AES)
+  uint16_t; -- 2-character vendor ID  0x0001, 0x0002 (AE-1/AE-2)
+  uint8_t;  -- Integer mode value indicating AES encryption strength(0x01-128 0x02-192 0x3-256)
+  uint16_t; -- The actual compression method used to compress the file
+}
+
+local AES_EXTRA_SIG = bit.lshift(string.byte('E'), 8) + string.byte('A')
+
+local AES_VERSION = {
+  AE1 = 0x0001;
+  AE2 = 0x0002;
+}
+
+local AES_MODE = {
+  AES128 = 0x01,
+  AES192 = 0x02,
+  AES256 = 0x03,
+}
+
 local function zip_make_extra(HID, data)
   return stream_converter.pack(STRUCT_CDH_EXTRA_RECORD, HID, #data, data)
 end
+
+local function zip_extra_pack(HID, struct, ...)
+  return zip_make_extra(HID, struct_pack(struct, ...))
+end
+
+
+-------------------------------------------------------------
+-- streams
+
+-- convert ZipWriter to stream
+local function ZipWriter_as_stream(stream)
+  -- @todo use class instead closures
+
+  -- use size becouse stream:get_pos() may not works on large files
+  local size = 0
+  return {
+    write = function(self, chunk)
+      size = size + #chunk
+      stream:write_(chunk)
+    end;
+
+    seekable = function(self)
+      return stream:seekable()
+    end;
+
+    get_pos = function(self)
+      return stream:get_pos()
+    end;
+
+    set_pos = function(self, pos)
+      return stream:set_pos(pos)
+    end;
+
+    close  = function(self)
+      return size;
+    end;
+  }
+end
+
+-- 
+local function zip_stream(stream, level, method)
+
+  -- @fixme this writer do not return number of bytes written by lowlevel stream and do not close it
+  local writer = {
+    last_4b  = "";
+    size     = 0;
+    stream   = stream;
+    seekable = stream:seekable();
+  }
+
+  function writer:write_block_seekable (cd)
+    self.stream:write(cd)
+    self.size = self.size + #cd 
+  end
+
+  function writer:write_block_no_seekable (cd)
+    local s = cd:sub(-4)
+    cd = self.last_4b .. cd:sub(1,-5)
+    self.last_4b = s
+
+    self.stream:write(cd)
+    self.size = self.size + #cd 
+  end
+
+  function writer:write_first_block(cd)
+    self.write_block = assert(self.seekable and self.write_block_seekable or self.write_block_no_seekable)
+    self:write_block(cd:sub(3))
+  end
+
+  writer.write_block = writer.write_first_block
+
+  function writer:write(cd)
+    self:write_block(cd)
+  end
+
+  function writer:close()
+    if self.seekable then
+      self.size = self.size - 4;
+      local pos = assert(self.stream:get_pos())
+      assert(self.stream:set_pos(pos-4))
+      -- we do not usee seek("cur", -4) becose of set_pos set internal pos in writer
+    end
+    return self.size
+  end
+
+  local zstream = {
+    zd = assert(zlib.deflate(writer, level, method))
+  }
+  
+  function zstream:write(chunk)
+    assert(self.zd:write(chunk))
+  end
+
+  function zstream:close()
+    self.zd:close()
+    return writer:close()
+  end
+
+  return zstream
+end
+
+-- This wrapper needed becouse of bug in zip_stream interface.
+local function zip_proxy_stream(proxy, ...)
+  local stream = zip_stream(proxy, ...)
+  local close  = stream.close
+  function stream:close()
+    close(self) -- this call do not close proxy. (BUG)
+    return proxy:close()
+  end
+  return stream
+end
+
+-------------------------------------------------------------
 
 --- Supported compression levels.
 -- @table COMPRESSION_LEVEL
@@ -327,6 +465,7 @@ function ZipWriter:new(options)
     private_ = {
       use_utf8  = options.utf8;
       use_zip64 = options.zip64;
+      encrypt   = options.encrypt;
     }
   }, self)
   t:set_level(options.level)
@@ -456,9 +595,20 @@ function ZipWriter:write(
   local method     = level.method
   local attri      = level.method
 
+  local cdextra    = "" -- to central directory
   local extra      = ""
   local crc        = zlib.crc32()
   local seekable   = self:seekable()
+
+  local encrypt    = fileDesc.encrypt or self.private_.encrypt
+
+  local use_aes  = false
+  if encrypt then
+    if encrypt:type() ~= 'aes' then error('unsupported encrypt method: ' .. encrypt:type()) end
+    use_aes = true
+  end
+  local AES_MODE = use_aes and encrypt:mode()
+  local AES_VER  = use_aes and encrypt:version()
 
   local fileDesc_mtime = time2dos(fileDesc.mtime)
   local inattrib = fileDesc.istext and 1 or 0 -- internal file attributes
@@ -468,16 +618,21 @@ function ZipWriter:write(
     inattrib = 0
   end
 
-  if method == ZIP_COMPRESSION_METHOD.STORE and fileDesc.isfile then  -- winrar 3.93 and 7z do this
-    version = ZIP_VERSION_EXTRACT["1.0"]
+  if use_aes then
+    version = ZIP_VERSION_EXTRACT["5.1"] -- @encrypt 7z do this
+  else
+    if method == ZIP_COMPRESSION_METHOD.STORE and fileDesc.isfile then  -- winrar 3.93 and 7z do this
+      version = ZIP_VERSION_EXTRACT["1.0"]
+    end
   end
 
-  local ver_made
-  if IS_WINDOWS then
-    ver_made   = bit.bor( ZIP_VERSION_MADE.FAT32, fileDesc.ver_made or ZIP_VERSION_EXTRACT["2.0"] )
-  else
-    ver_made   = bit.bor( ZIP_VERSION_MADE.UNIX,  fileDesc.ver_made or ZIP_VERSION_EXTRACT["2.3"] )
+  local ver_made 
+  if use_aes then
+    ver_made = ZIP_VERSION_EXTRACT["6.3"] -- @encrypt 7z do this
+  else 
+    ver_made = IS_WINDOWS and ZIP_VERSION_EXTRACT["2.0"] or ZIP_VERSION_EXTRACT["2.0"]
   end
+  ver_made   = bit.bor( ver_made, IS_WINDOWS and ZIP_VERSION_MADE.FAT32 or ZIP_VERSION_MADE.UNIX )
 
   if fileDesc.isfile then
     flags = bit.bor(flags, level.flag)
@@ -488,36 +643,52 @@ function ZipWriter:write(
 
   local size   = 0
   local csize  = 0
-  local extra  = ""
   local offset = self:get_pos()
 
+  if use_aes then
+    local e = zip_extra_pack(ZIP_CDH_EXTRA_ID.AES, STRUCT_AES_EXTRA, 
+      AES_VER, AES_EXTRA_SIG, AES_MODE, method)
+    extra   = extra   .. e
+    cdextra = cdextra .. e -- export to CD
+    flags   = bit.bor(flags, ZIP_FLAGS.ENCRYPT)
+  end
+
+  local offset_extra_zip64
   if self:use_zip64() then
-    extra = struct_pack(STRUCT_ZIP64_EXTRA, size, csize, offset - self.private_.begin_pos, 0)
-    extra = zip_make_extra(ZIP_CDH_EXTRA_ID.ZIP64, extra)
+    offset_extra_zip64 = #extra + 4 -- position in extra field (skeep HeaderID and FieldSize)
+    extra = extra .. zip_extra_pack(ZIP_CDH_EXTRA_ID.ZIP64, STRUCT_ZIP64_EXTRA, 
+      size, csize, offset - self.private_.begin_pos, 0
+    )
     size   = 0xFFFFFFFF
     csize  = 0xFFFFFFFF
   end
 
   self:write_fmt_(STRUCT_LOCAL_FILE_HEADER,
-    ZIP_SIG.LFH, version, flags, method, fileDesc_mtime, crc,
+    ZIP_SIG.LFH, version, flags, 
+    use_aes and ZIP_COMPRESSION_METHOD.AES or method,
+    fileDesc_mtime, crc,
     csize, size, #utfpath, #extra,
     utfpath, extra
   )
 
-  local offset_extra_zip64
   if self:use_zip64() then
-    offset_extra_zip64 = self:get_pos() - (#extra - 4) -- header ID + FieldSize
+    -- position in stream
+    offset_extra_zip64 = (self:get_pos() - #extra) + offset_extra_zip64
   end
 
   size   = 0
   csize  = 0
 
   if fileDesc.isfile then
+    -- create stream for file data
+    local stream = ZipWriter_as_stream(self)
+
     if fileDesc.data then 
       local data = fileDesc.data
       size = #data
       crc = zlib.crc32(crc, data)
 
+      -- @fixme use stream interface
       local cdata
       if method == ZIP_COMPRESSION_METHOD.DEFLATE then
         cdata = {}
@@ -525,8 +696,9 @@ function ZipWriter:write(
         assert(zd:write(data))
         zd:close()
         cdata = table.concat(cdata):sub(3,-5) -- some magic
-
-        if seekable and (#cdata > size) then
+ 
+        -- if we can change method in LFH we can use it
+        if seekable and (not use_aes) and (#cdata > size) then
           method = ZIP_COMPRESSION_METHOD.STORE
           cdata = data
         end
@@ -535,76 +707,36 @@ function ZipWriter:write(
         cdata = data
       end
 
-      csize = #cdata
-      self:write_(cdata)
-    else
+      if use_aes then stream = encrypt:stream(stream, fileDesc) end
+
+      stream:write(cdata)
+    else -- use stream
       if method == ZIP_COMPRESSION_METHOD.DEFLATE then
-
-        local writer = {
-          last_4b  = "";
-          size     = 0;
-          stream   = self;
-          seekable = seekable;
-        }
-
-        function writer:write_block_seekable (cd)
-          self.stream:write_(cd)
-          self.size = self.size + #cd 
+        if use_aes then
+          local estream = encrypt:stream(stream, fileDesc)
+          stream = zip_proxy_stream(estream, level.value, method)
+        else
+          stream = zip_stream(stream, level.value, method)
         end
-
-        function writer:write_block_no_seekable (cd)
-          local s = cd:sub(-4)
-          cd = self.last_4b .. cd:sub(1,-5)
-          self.last_4b = s
-
-          self.stream:write_(cd)
-          self.size = self.size + #cd 
-        end
-
-        function writer:write_first_block(cd)
-          self.write_block = assert(self.seekable and self.write_block_seekable or self.write_block_no_seekable)
-          self:write_block(cd:sub(3))
-        end
-
-        writer.write_block = writer.write_first_block
-
-        function writer:write(cd)
-          self:write_block(cd)
-        end
-
-        function writer:close()
-          if self.seekable then
-            self.size = self.size - 4;
-            local pos = assert(self.stream:get_pos())
-            assert(self.stream:set_pos(pos-4))
-            -- we do not usee seek("cur", -4) becose of set_pos set internal pos in writer
-          end
-        end
-
-        local zd = zlib.deflate(writer, level.value, method)
-
-        local chunk, ctx = reader()
-        while(chunk)do
-          crc = zlib.crc32(correct_crc(crc), chunk)
-          assert(zd:write(chunk))
-          size = size + #chunk
-          chunk, ctx = reader(ctx)
-        end
-        zd:close()
-        writer:close()
-
-        csize = writer.size;
-      else 
+      else
         assert(method == ZIP_COMPRESSION_METHOD.STORE)
-        local chunk, ctx = reader()
-        while(chunk)do
-          crc = zlib.crc32(correct_crc(crc), chunk)
-          self:write_(chunk)
-          size = size + #chunk
-          chunk, ctx = reader(ctx)
-        end
-        csize = size
+        if use_aes then stream = encrypt:stream(stream, fileDesc) end
       end
+
+      local chunk, ctx = reader()
+      while(chunk)do
+        crc = zlib.crc32(correct_crc(crc), chunk)
+        stream:write(chunk)
+        size = size + #chunk
+        chunk, ctx = reader(ctx)
+      end
+    end
+
+    csize = stream:close()
+
+    if use_aes then
+      method = ZIP_COMPRESSION_METHOD.AES
+      if AES_VER == AES_VERSION.AE2 then crc = 0 end
     end
 
     if seekable then -- update the header if the output is seekable
@@ -637,7 +769,6 @@ function ZipWriter:write(
     end
   end
 
-  extra = ""
   if IS_WINDOWS then
     local m,a,c = fileDesc.mtime,fileDesc.atime,fileDesc.ctime
     if time2filetime and m and a and c then
@@ -655,24 +786,24 @@ function ZipWriter:write(
           0x0001, 0x0018, m[1],m[2],a[1],a[2],c[1],c[2]
         )
       )
-      extra = extra .. ntfs_extra
+      cdextra = ntfs_extra .. cdextra
     end
   end
 
   if self:use_zip64() then
     local z64extra = struct_pack(STRUCT_ZIP64_EXTRA, size, csize, offset - self.private_.begin_pos, 0)
-    extra = extra .. zip_make_extra(ZIP_CDH_EXTRA_ID.ZIP64, z64extra)
+    cdextra = cdextra .. zip_make_extra(ZIP_CDH_EXTRA_ID.ZIP64, z64extra)
 
     size   = 0xFFFFFFFF
     csize  = 0xFFFFFFFF
   end
 
   local cdh = struct_pack(STRUCT_CENTRAL_DIRECTORY, 
-    ZIP_SIG.CFH,ver_made,version,flags,method,
+    ZIP_SIG.CFH,ver_made,version, flags, method,
     fileDesc_mtime,crc,csize,size,
-    #utfpath, #extra, #utfcomment,
-    0, inattrib, fileDesc.exattrib or 0, offset - self.private_.begin_pos, -- disk number start
-    utfpath, extra, utfcomment
+    #utfpath, #cdextra, #utfcomment,
+    0, inattrib, fileDesc.exattrib or 0x00, offset - self.private_.begin_pos, -- disk number start
+    utfpath, cdextra, utfcomment
   )
   table.insert(self.private_.headers, cdh)
   return true
@@ -701,7 +832,7 @@ function ZipWriter:close(comment)
 
     self:write_fmt_(STRUCT_ZIP64_EOCD,
       ZIP_SIG.ZIP64_EOCD, zip64_eocd_size,
-      ZIP_VERSION_EXTRACT["6.3"],ZIP_VERSION_EXTRACT["6.3"],
+      ZIP_VERSION_EXTRACT["6.3"], ZIP_VERSION_EXTRACT["6.3"],
       0,0,-- disk numbers
       filenum,filenum,
       cdLength,cdOffset,
@@ -728,7 +859,6 @@ end
 local rawget, upper, error, tostring, setmetatable = rawget, string.upper, error,tostring, setmetatable
 
 local M = {}
-
 
 M.COMPRESSION_LEVEL = setmetatable({
     NO       = assert(ZIP_COMPRESSION_LEVEL.NO_COMPRESSION);

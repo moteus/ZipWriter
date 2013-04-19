@@ -18,15 +18,26 @@ function LOAD(fname)
   return enc
 end
 
--- print( LOAD[[g:\lua\5.1\libs\ZipWriter\examples\test_64_no.zip]]) do return end
+-- print( LOAD[[g:\lua\5.1\libs\ZipWriter\examples\test.zip]]) do return end
 
 local ZipWriter = require "ZipWriter"
 local memfile   = require "memoryfile"
 local lunit     = require "lunitx"
 local tutils    = require "utils"
 local TEST_CASE = tutils.TEST_CASE
+local skip      = tutils.skip
 
+local function prequire(m) 
+  local ok, err = pcall(require, m) 
+  if not ok then return nil, err end
+  return err
+end
 
+local function H(t, b, e)
+  local str = ''
+  for i = b or 1, e or #t do str = str .. (string.char(t[i])) end
+  return str
+end
 
 local ETALON = { -- make by winrar 3.93
   NO      = "UEsDBAoAAAAAADVwM0E6zD49KgAAACoAAAAIAAAAdGVzdC50eHQxMTExMTExMTExMTExMTExMTExMQ0KMjIyMjIyMjIyMjIyMjIyMjIyMjJQSwECFAAKAAAAAAA1cDNBOsw+PSoAAAAqAAAACAAAAAAAAAAAACAAAAAAAAAAdGVzdC50eHRQSwUGAAAAAAEAAQA2AAAAUAAAAAAA";
@@ -272,6 +283,70 @@ function test_()
   Make('DEFAULT')
   Make('SPEED')
   Make('BEST')
+end
+
+end
+
+
+local AesEncrypt = prequire"ZipWriter.encrypt.aes"
+
+if AesEncrypt then 
+
+local DATA = "11111111111111111111\r\n22222222222222222222"
+
+local fileDesc = {
+  istext = true,
+  isfile = true,
+  isdir  = false,
+  mtime   = 1348048902,
+  ctime   = 1366112737,
+  atime   = 1366378701,
+  exattrib = 32,
+}
+
+local _ENV = TEST_CASE'ZipWriter AES-256' do
+
+local ETALON = {
+  -- identical with 7z, but ntfs_extra field
+  NO = [[UEsDBDMAAQBjADZwM0EAAAAARgAAACoAAAAIAAsAdGVzdC50eHQBmQcAAgBBRQMAAAT5Svtgr0dE1NubOucjPsa+cjopgUGk59m/cSjwBAiy1nPu7M00DxtAT4EMWReOthEL76uIxaSJ98WgyXytSyTidhZmDyJQSwECPwAzAAEAYwA2cDNBAAAAAEYAAAAqAAAACAAvAAAAAAAAACAAAAAAAAAAdGVzdC50eHQKACAAAAAAAAEAGAAAB67ETZbNAYAEQygDPc4BgEZd6Zc6zgEBmQcAAgBBRQMAAFBLBQYAAAAAAQABAGUAAAB3AAAAAAA=]];
+}
+
+function setup()
+  fileDesc.data = DATA
+end
+
+function teardown()
+  fileDesc.data = nil
+end
+
+local function Make(lvl)
+  local out    = memfile.open("", "wb")
+
+  local writer = ZipWriter.new{
+    utf8 = false;
+    level = ZipWriter.COMPRESSION_LEVEL[lvl];
+    encrypt = AesEncrypt.new{
+      mode     = AesEncrypt.MODE.AES256;
+      version  = AesEncrypt.VERSION.AE2;
+      password = '123456';
+      salt     = H{0x04, 0xF9, 0x4A, 0xFB, 0x60, 0xAF, 0x47, 0x44, 0xD4, 0xDB, 0x9B, 0x3A, 0xE7, 0x23, 0x3E, 0xC6};  -- optional
+    }
+  }
+  writer:open_stream(out)
+  writer:write('test.txt', fileDesc)
+  writer:close()
+
+  local res = base64.encode( tostring(out) )
+  assert( res == ETALON[ lvl:upper() ] )
+end
+
+function test_()
+  Make('NO')
+  -- Make('DEFAULT')
+  -- Make('SPEED')
+  -- Make('BEST')
+end
+
 end
 
 end
