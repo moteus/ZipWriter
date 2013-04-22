@@ -293,13 +293,13 @@ local ZIP_AES_MODES = {
   [AES_MODE.AES256] = 256,
 }
 
-function AesEncrypt:new(mode, password)
+function AesEncrypt:new(password, mode)
   local salt, version
-  if type(mode) == 'table' then
-    password = mode.password
-    version  = mode.version
-    salt     = mode.salt
-    mode     = mode.mode
+  if type(password) == 'table' then
+    version  = password.version
+    salt     = password.salt
+    mode     = password.mode
+    password = password.password
   end
 
   local o = setmetatable({}, self)
