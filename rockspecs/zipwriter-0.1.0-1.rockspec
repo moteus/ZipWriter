@@ -7,7 +7,7 @@ source = {
 
 description = {
   summary = "Library for creating ZIP archive for Lua 5.1/5.2",
-  homepage = "https://github.com/ZipWriter",
+  homepage = "https://github.com/moteus/ZipWriter",
   detailed = [[This package provides a library to create zip archives.
   This library support non seekable streams (e.g. socket) and ZIP64 format.
   ]],
