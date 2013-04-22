@@ -331,29 +331,28 @@ end
 -- convert ZipWriter to stream
 local function ZipWriter_as_stream(stream)
   -- @todo use class instead closures
-
-  -- use size becouse stream:get_pos() may not works on large files
-  local size = 0
   return {
+    stream = stream;
+    pos    = assert(stream:get_pos());
+
     write = function(self, chunk)
-      size = size + #chunk
-      stream:write_(chunk)
+      self.stream:write_(chunk)
     end;
 
     seekable = function(self)
-      return stream:seekable()
+      return self.stream:seekable()
     end;
 
     get_pos = function(self)
-      return stream:get_pos()
+      return self.stream:get_pos()
     end;
 
     set_pos = function(self, pos)
-      return stream:set_pos(pos)
+      return self.stream:set_pos(pos)
     end;
 
     close  = function(self)
-      return size;
+      return self.stream:get_pos() - self.pos
     end;
   }
 end
@@ -361,17 +360,13 @@ end
 -- 
 local function zip_stream(stream, level, method)
 
-  -- @fixme this writer do not return number of bytes written by lowlevel stream and do not close it
   local writer = {
-    last_4b  = "";
-    size     = 0;
     stream   = stream;
-    seekable = stream:seekable();
+    last_4b  = "";
   }
 
   function writer:write_block_seekable (cd)
     self.stream:write(cd)
-    self.size = self.size + #cd 
   end
 
   function writer:write_block_no_seekable (cd)
@@ -380,11 +375,10 @@ local function zip_stream(stream, level, method)
     self.last_4b = s
 
     self.stream:write(cd)
-    self.size = self.size + #cd 
   end
 
   function writer:write_first_block(cd)
-    self.write_block = assert(self.seekable and self.write_block_seekable or self.write_block_no_seekable)
+    self.write_block = assert(self.stream:seekable() and self.write_block_seekable or self.write_block_no_seekable)
     self:write_block(cd:sub(3))
   end
 
@@ -395,13 +389,11 @@ local function zip_stream(stream, level, method)
   end
 
   function writer:close()
-    if self.seekable then
-      self.size = self.size - 4;
+    if self.stream:seekable() then
       local pos = assert(self.stream:get_pos())
       assert(self.stream:set_pos(pos-4))
-      -- we do not usee seek("cur", -4) becose of set_pos set internal pos in writer
     end
-    return self.size
+    return self.stream:close()
   end
 
   local zstream = {
@@ -420,17 +412,6 @@ local function zip_stream(stream, level, method)
   return zstream
 end
 
--- This wrapper needed becouse of bug in zip_stream interface.
-local function zip_proxy_stream(proxy, ...)
-  local stream = zip_stream(proxy, ...)
-  local close  = stream.close
-  function stream:close()
-    close(self) -- this call do not close proxy. (BUG)
-    return proxy:close()
-  end
-  return stream
-end
-
 local function table_stream(dst)
   local size = 0
   return {
@@ -446,6 +427,10 @@ local function table_stream(dst)
 
     seekable = function()
       return false
+    end;
+    
+    get_pos = function()
+      return size;
     end;
   }
 end
@@ -611,7 +596,6 @@ function ZipWriter:write(
   local flags      = self:use_utf8() and ZIP_FLAGS.UTF8 or 0
   local level      = self.private_.level
   local method     = level.method
-  local attri      = level.method
 
   local cdextra    = "" -- to central directory
   local extra      = ""
@@ -727,17 +711,10 @@ function ZipWriter:write(
 
       stream:write(cdata)
     else -- use stream
+      if use_aes then stream = encrypt:stream(stream, fileDesc) end
       if method == ZIP_COMPRESSION_METHOD.DEFLATE then
-        if use_aes then
-          local estream = encrypt:stream(stream, fileDesc)
-          stream = zip_proxy_stream(estream, level.value, method)
-        else
-          stream = zip_stream(stream, level.value, method)
-        end
-      else
-        assert(method == ZIP_COMPRESSION_METHOD.STORE)
-        if use_aes then stream = encrypt:stream(stream, fileDesc) end
-      end
+        stream = zip_stream(stream, level.value, method)
+      else assert(method == ZIP_COMPRESSION_METHOD.STORE) end
 
       local chunk, ctx = reader()
       while(chunk)do
