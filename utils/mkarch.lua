@@ -2,8 +2,6 @@ local IS_WINDOWS = package.config:sub(1,1) == '\\'
 
 local ZipWriter = require "ZipWriter"
 local PATH      = require "path"
-PATH.findfile   = require "path.findfile"
-local lfs       = require "lfs"
 
 local TEXT_EXT = {".lua", ".txt", ".c", ".cpp", ".h", ".hpp", ".pas", ".cxx", ".me"}
 
@@ -65,10 +63,10 @@ if PATH.extension(oFile):lower() ~= '.zip' then
 end
 
 local files = {}
-for fullpath in PATH.findfile(mask,{recurse = true;skipdirs = false}) do
+PATH.each(mask, function(fullpath)
   local relpath = string.sub(fullpath, #base + 1)
   table.insert(files,{fullpath, relpath})
-end
+end,{recurse=true;skipdirs=true})
 
 writer = ZipWriter.new{
   level = ZipWriter.COMPRESSION_LEVEL.DEFAULT;

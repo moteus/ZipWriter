@@ -71,3 +71,17 @@ FTP.get{
 
 ZipStream:close()
 ```
+
+Make encrypted archive
+```lua
+local ZipWriter  = require"ZipWriter"
+local AesEncrypt = require"ZipWriter.encrypt.aes"
+
+ZipStream = ZipWriter.new{
+  encrypt = AesEncrypt.new('password')
+}
+
+-- as before
+
+```
+
