@@ -18,11 +18,9 @@ function LOAD(fname)
   return enc
 end
 
--- print( LOAD[[g:\lua\5.1\libs\ZipWriter\examples\test.zip]]) do return end
-
 local ZipWriter = require "ZipWriter"
 local memfile   = require "memoryfile"
-local lunit     = require "lunitx"
+local lunit     = require "lunit"
 local tutils    = require "utils"
 local TEST_CASE = tutils.TEST_CASE
 local skip      = tutils.skip
@@ -287,7 +285,6 @@ end
 
 end
 
-
 local AesEncrypt = prequire"ZipWriter.encrypt.aes"
 
 if AesEncrypt then 
@@ -350,3 +347,5 @@ end
 end
 
 end
+
+lunit.run()
