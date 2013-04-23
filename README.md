@@ -10,6 +10,7 @@ Based on http://wiki.tcl.tk/15158
 - alien/ffi (on Windos detect system default codepage)
 - lunit (only for test)
 - memoryfile (only for test)
+- [AesFileEncrypt] (https://github.com/moteus/lua-AesFileEncrypt) (optional)
 
 ## Supports ##
 - write to non seekable stream
