@@ -37,11 +37,12 @@ build = {
   },
 
   modules = {
-    ["ZipWriter" ]                 = "lua/ZipWriter.lua",
-    ["ZipWriter.binary_converter"] = "lua/ZipWriter/binary_converter.lua",
-    ["ZipWriter.charset"]          = "lua/ZipWriter/charset.lua",
-    ["ZipWriter.utils"]            = "lua/ZipWriter/utils.lua",
-    ["ZipWriter.encrypt.aes"]      = "lua/ZipWriter/encrypt/aes.lua",
+    ["ZipWriter" ]                           = "lua/ZipWriter.lua",
+    ["ZipWriter.binary_converter"]           = "lua/ZipWriter/binary_converter.lua",
+    ["ZipWriter.charset"]                    = "lua/ZipWriter/charset.lua",
+    ["ZipWriter.utils"]                      = "lua/ZipWriter/utils.lua",
+    ["ZipWriter.encrypt.aes"]                = "lua/ZipWriter/encrypt/aes.lua",
+    ["ZipWriter.encrypt.aes.AesFileEncrypt"] = "lua/ZipWriter/encrypt/aes/AesFileEncrypt.lua",
   }
 }
 
