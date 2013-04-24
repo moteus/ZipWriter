@@ -79,6 +79,7 @@ function AesFileEncrypt:new(block_size)
   local o = setmetatable({
     private_ = {
       block_size = block_size or BLOCK_SIZE;
+      encrypt    = true;
     }
   }, self)
   return o
@@ -124,12 +125,13 @@ local function inc_nonce(nonce)
   end
 end
 
-function AesFileEncrypt:update_impl(msg, len)
+function AesFileEncrypt:update_impl(encrypt, msg, len)
   local chunk_size = assert(self.private_.block_size)
   local nonce      = assert(self.private_.nonce)
   local aes_key    = assert(self.private_.aes_key)
   local mac        = assert(self.private_.mac)
-  local writer     = assert(self.private_.writer)
+  local writer     = self.private_.writer
+  local data if not writer then data = {} end
 
   local buf        = {}
   local sbyte      = string.byte
@@ -140,20 +142,22 @@ function AesFileEncrypt:update_impl(msg, len)
     local chunk = string.sub(msg, b, e)
     if #chunk == 0 then break end
 
+    if not encrypt then mac:update(chunk) end
     inc_nonce(nonce)
     local tmp = crypto.encrypt(aes_name, H(nonce), aes_key)
     assert(#tmp >= chunk_size)
     for i = 1, #chunk do buf[i] = bit.bxor( sbyte(chunk, i), sbyte(tmp, i) ) end
     local enc = H(buf)
-    mac:update(enc)
-    writer(enc)
+    if encrypt then mac:update(enc) end
+    if writer then writer(enc) else table.insert(data, enc) end
   end
+  if not writer then return table.concat(data) end
 end
 
 --- Write new portion of data
 -- @tparam string msg
 -- @return nothing
-function AesFileEncrypt:encrypt(msg)
+function AesFileEncrypt:update_(msg)
   if self.private_.tail then
     msg = self.private_.tail .. msg
     self.private_.tail = nil
@@ -163,7 +167,17 @@ function AesFileEncrypt:encrypt(msg)
 
   if len < #msg then self.private_.tail = string.sub(msg, len + 1) end
 
-  return self:update_impl(msg, len)
+  return self:update_impl(self.private_.encrypt, msg, len)
+end
+
+function AesFileEncrypt:encrypt(msg)
+  self.private_.encrypt = true
+  return self:update_(msg)
+end
+
+function AesFileEncrypt:decrypt(msg)
+  self.private_.encrypt = false
+  return self:update_(msg)
 end
 
 --- Write last portion of data
@@ -179,7 +193,7 @@ function AesFileEncrypt:close(msg)
   end
   self.private_.tail = nil
 
-  if msg then self:update_impl(msg, #msg) end
+  if msg then msg = self:update_impl(self.private_.encrypt, msg, #msg) end
 
   local mac  = self.private_.mac:final(nil, true)
 
@@ -190,7 +204,7 @@ function AesFileEncrypt:close(msg)
   self.private_.mac_key = nil
   self.private_.pwd_ver = nil
 
-  return mac:sub(1, self.private_.mode.mac)
+  return mac:sub(1, self.private_.mode.mac), msg
 end
 
 function AesFileEncrypt:destroy()
@@ -216,6 +230,12 @@ function AesFileEncrypt:set_writer(writer, ctx)
     end
   end
   return self
+end
+
+---
+--
+function AesFileEncrypt:get_writer()
+  return self.private_.writer
 end
 
 local function test_derive_key()
