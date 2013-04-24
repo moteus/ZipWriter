@@ -20,7 +20,7 @@ local function prequire(m)
   return err
 end
 
-local AesFileEncrypt = prequire "AesFileEncrypt" or prequire "ZipWriter.encrypt.aes.AesFileEncrypt"
+local AesFileEncrypt = assert(prequire "AesFileEncrypt" or prequire "ZipWriter.encrypt.aes.AesFileEncrypt")
 
 local rand_bytes
 
