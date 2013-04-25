@@ -125,6 +125,27 @@ local function inc_nonce(nonce)
   end
 end
 
+local function ichunks(len, chunk_size)
+  return function(_, b)
+    b = b + chunk_size
+    if b > len then return nil end
+    local e = b + chunk_size - 1
+    if e > len then e = len end
+    return b, e
+  end, nil, -chunk_size + 1
+end
+
+local function chunks(msg, chunk_size, len)
+  len = len or #msg
+  return function(_, b)
+    b = b + chunk_size
+    if b > len then return nil end
+    local e = b + chunk_size - 1
+    if e > len then e = len end
+    return b, (string.sub(msg, b, e))
+  end, nil, -chunk_size + 1
+end
+
 function AesFileEncrypt:update_impl(encrypt, msg, len)
   local chunk_size = assert(self.private_.block_size)
   local nonce      = assert(self.private_.nonce)
@@ -137,11 +158,7 @@ function AesFileEncrypt:update_impl(encrypt, msg, len)
   local sbyte      = string.byte
   local aes_name   = self.private_.mode.name .. '-cbc'
 
-  for b = 1, len, chunk_size do
-    local e = b + chunk_size - 1
-    local chunk = string.sub(msg, b, e)
-    if #chunk == 0 then break end
-
+  for b, chunk in chunks(msg, chunk_size, len) do
     if not encrypt then mac:update(chunk) end
     inc_nonce(nonce)
     local tmp = crypto.encrypt(aes_name, H(nonce), aes_key)
