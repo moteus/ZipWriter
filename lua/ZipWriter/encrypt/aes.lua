@@ -35,7 +35,7 @@ if not rand_bytes then
     rand_bytes = function (n)
       local t = {}
       local r = random.new(os.time())
-      for i = 1, n do table.insert(string.char(r(255))) end
+      for i = 1, n do table.insert(t, string.char(r(255))) end
       return table.concat(t)
     end
   end
@@ -46,7 +46,7 @@ if not rand_bytes then
   local random = math.random
   rand_bytes = function (n)
     local t = {}
-    for i = 1, n do table.insert(string.char(random(256)-1)) end
+    for i = 1, n do table.insert(t, string.char(random(256)-1)) end
     return table.concat(t)
   end
 end
