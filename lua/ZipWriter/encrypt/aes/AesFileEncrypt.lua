@@ -225,6 +225,15 @@ function AesFileEncrypt:close(msg)
 end
 
 function AesFileEncrypt:destroy()
+  self.private_.block_size = nil
+end
+
+function AesFileEncrypt:opened()
+  return not not self.private_.aes_key
+end
+
+function AesFileEncrypt:destroyed()
+  return not not self.private_.block_size
 end
 
 ---
@@ -253,6 +262,14 @@ end
 --
 function AesFileEncrypt:get_writer()
   return self.private_.writer
+end
+
+function AesFileEncrypt:iv()
+  return H(self.private_.nonce)
+end
+
+function AesFileEncrypt:key()
+  return self.private_.aes_key
 end
 
 local function test_derive_key()
