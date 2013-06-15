@@ -36,7 +36,7 @@ install:
   - sudo luarocks install https://raw.github.com/moteus/luacrypto/master/rockspecs/luacrypto-git-1.rockspec
   - sudo luarocks install lua-iconv
   - sudo luarocks install lzlib
-  - sudo luarocks install struct
+  - sudo luarocks install deps/struct-1.4-1.rockspec
   - sudo luarocks install lbase64
   - sudo luarocks make rockspecs/zipwriter-scm-0.rockspec
 
