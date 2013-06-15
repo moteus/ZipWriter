@@ -29,6 +29,8 @@ before_install:
 
 
 install:
+  - sudo apt-get install zlib1g-dev
+  - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
   # supports skip
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
   - sudo luarocks install https://raw.github.com/moteus/luacrypto/master/rockspecs/luacrypto-git-1.rockspec
