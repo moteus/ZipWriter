@@ -66,7 +66,7 @@ function teardown()
   fileDesc.data = nil
 end
 
-local function Make(lvl)
+local function Make(lvl) return function()
   local out = Stream:new()
 
   local writer = ZipWriter.new{
@@ -78,21 +78,19 @@ local function Make(lvl)
   writer:close()
 
   local res = base64.encode( tostring(out) )
-  assert( res == ETALON[ lvl:upper() ] )
-end
+  assert_equal( ETALON[ lvl:upper() ], res )
+end end
 
-function test_()
-  Make('NO')
-  Make('DEFAULT')
-  Make('SPEED')
-  Make('BEST')
-end
+test_no      = Make('NO')
+test_default = Make('DEFAULT')
+test_speed   = Make('SPEED')
+test_best    = Make('BEST')
 
 end
 
 local _ENV = TEST_CASE'ZipWriter reader' do
 
-local function Make(lvl)
+local function Make(lvl) return function()
   local out = Stream:new()
   -- local out    = io.open(".\\out.zip", "wb")
   
@@ -112,21 +110,19 @@ local function Make(lvl)
   writer:close()
 
   local res = base64.encode( tostring(out) )
-  assert( res == ETALON[ lvl:upper() ] )
-end
+  assert_equal( ETALON[ lvl:upper() ], res )
+end end
 
-function test_()
-  Make('NO')
-  Make('DEFAULT')
-  Make('SPEED')
-  Make('BEST')
-end
+test_no      = Make('NO')
+test_default = Make('DEFAULT')
+test_speed   = Make('SPEED')
+test_best    = Make('BEST')
 
 end
 
 local _ENV = TEST_CASE'ZipWriter sink' do
 
-local function Make(lvl)
+local function Make(lvl) return function()
   local out = Stream:new()
 
   local writer = ZipWriter.new{
@@ -141,15 +137,13 @@ local function Make(lvl)
   writer:close()
   
   local res = base64.encode( tostring(out) )
-  assert( res == ETALON[ lvl:upper() ] )
-end
+  assert_equal( ETALON[ lvl:upper() ], res )
+end end
 
-function test_()
-  Make('NO')
-  Make('DEFAULT')
-  Make('SPEED')
-  Make('BEST')
-end
+test_no      = Make('NO')
+test_default = Make('DEFAULT')
+test_speed   = Make('SPEED')
+test_best    = Make('BEST')
 
 end
 
@@ -162,7 +156,7 @@ local ETALON = { -- testd with winrar 3.93 / 7-Zip 9.20.04 alpha
   BEST    = [[UEsDBBQACgAIADVwM0EAAAAAAAAAAAAAAAAIAAAAdGVzdC50eHQzNMQEvFxGWAAAUEsHCDrMPj0KAAAAKgAAAFBLAQIUABQACgAIADVwM0E6zD49CgAAACoAAAAIAAAAAAAAAAEAIAAAAAAAAAB0ZXN0LnR4dFBLBQYAAAAAAQABADYAAABAAAAAAAA=]];
 }
 
-local function Make(lvl)
+local function Make(lvl) return function()
   local data = fileDesc.data
   local function reader(i)
     i = i or 1
@@ -191,15 +185,13 @@ local function Make(lvl)
   local res = table.concat(RES)
 
   res = base64.encode( res )
-  assert( res == ETALON[ lvl:upper() ] )
-end
+  assert_equal( ETALON[ lvl:upper() ], res )
+end end
 
-function test_()
-  Make('NO')
-  Make('DEFAULT')
-  Make('SPEED')
-  Make('BEST')
-end
+test_no      = Make('NO')
+test_default = Make('DEFAULT')
+test_speed   = Make('SPEED')
+test_best    = Make('BEST')
 
 end
 
@@ -220,7 +212,7 @@ function teardown()
   fileDesc.data = nil
 end
 
-local function Make(lvl)
+local function Make(lvl) return function()
   local out = Stream:new()
 
   local writer = ZipWriter.new{
@@ -233,15 +225,13 @@ local function Make(lvl)
   writer:close()
 
   local res = base64.encode( tostring(out) )
-  assert( res == ETALON[ lvl:upper() ] )
-end
+  assert_equal( ETALON[ lvl:upper() ], res )
+end end
 
-function test_()
-  Make('NO')
-  Make('DEFAULT')
-  Make('SPEED')
-  Make('BEST')
-end
+test_no      = Make('NO')
+test_default = Make('DEFAULT')
+test_speed   = Make('SPEED')
+test_best    = Make('BEST')
 
 end
 
@@ -262,7 +252,7 @@ function teardown()
   fileDesc.data = nil
 end
 
-local function Make(lvl)
+local function Make(lvl) return function()
   local out = Stream:new()
 
   local writer = ZipWriter.new{
@@ -275,15 +265,13 @@ local function Make(lvl)
   writer:close()
 
   local res = base64.encode( tostring(out) )
-  assert( res == ETALON[ lvl:upper() ], lvl )
-end
+  assert_equal( ETALON[ lvl:upper() ], res )
+end end
 
-function test_()
-  Make('NO')
-  Make('DEFAULT')
-  Make('SPEED')
-  Make('BEST')
-end
+test_no      = Make('NO')
+test_default = Make('DEFAULT')
+test_speed   = Make('SPEED')
+test_best    = Make('BEST')
 
 end
 
@@ -318,7 +306,7 @@ function teardown()
   fileDesc.data = nil
 end
 
-local function Make(lvl)
+local function Make(lvl) return function()
   local out = Stream:new()
 
   local writer = ZipWriter.new{
@@ -337,14 +325,12 @@ local function Make(lvl)
 
   local res = base64.encode( tostring(out) )
   assert( res == ETALON[ lvl:upper() ] )
-end
+end end
 
-function test_()
-  Make('NO')
-  -- Make('DEFAULT')
-  -- Make('SPEED')
-  -- Make('BEST')
-end
+test_no      = Make('NO')
+-- test_default = Make('DEFAULT')
+-- test_speed   = Make('SPEED')
+-- test_best    = Make('BEST')
 
 end
 
