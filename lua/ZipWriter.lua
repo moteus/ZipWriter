@@ -7,6 +7,11 @@ local utils            = require "ZipWriter.utils"
 local stream_converter = require "ZipWriter.binary_converter"
 local bit              = utils.bit
 
+local ZLIB_NO_COMPRESSION      = zlib.NO_COMPRESSION       or  0
+local ZLIB_BEST_SPEED          = zlib.BEST_SPEED           or  1
+local ZLIB_BEST_COMPRESSION    = zlib.BEST_COMPRESSION     or  9
+local ZLIB_DEFAULT_COMPRESSION = zlib.DEFAULT_COMPRESSION  or -1
+
 local sc = stream_converter
 
 local stdout = io.stdout
@@ -239,10 +244,10 @@ local ZIP_VERSION_MADE = {
 }
 
 local ZIP_COMPRESSION_LEVEL = {
-  NO_COMPRESSION      = {value = zlib.NO_COMPRESSION;       flag = ZIP_FLAGS.DEFLATE_NORMAL;  method = ZIP_COMPRESSION_METHOD.STORE;};
-  BEST_SPEED          = {value = zlib.BEST_SPEED;           flag = ZIP_FLAGS.DEFLATE_FAST;    method = ZIP_COMPRESSION_METHOD.DEFLATE;};
-  BEST_COMPRESSION    = {value = zlib.BEST_COMPRESSION;     flag = ZIP_FLAGS.DEFLATE_MAXIMUM; method = ZIP_COMPRESSION_METHOD.DEFLATE;};
-  DEFAULT_COMPRESSION = {value = zlib.DEFAULT_COMPRESSION;  flag = ZIP_FLAGS.DEFLATE_NORMAL;  method = ZIP_COMPRESSION_METHOD.DEFLATE;};
+  NO_COMPRESSION      = {value = ZLIB_NO_COMPRESSION;       flag = ZIP_FLAGS.DEFLATE_NORMAL;  method = ZIP_COMPRESSION_METHOD.STORE;};
+  BEST_SPEED          = {value = ZLIB_BEST_SPEED;           flag = ZIP_FLAGS.DEFLATE_FAST;    method = ZIP_COMPRESSION_METHOD.DEFLATE;};
+  BEST_COMPRESSION    = {value = ZLIB_BEST_COMPRESSION;     flag = ZIP_FLAGS.DEFLATE_MAXIMUM; method = ZIP_COMPRESSION_METHOD.DEFLATE;};
+  DEFAULT_COMPRESSION = {value = ZLIB_DEFAULT_COMPRESSION;  flag = ZIP_FLAGS.DEFLATE_NORMAL;  method = ZIP_COMPRESSION_METHOD.DEFLATE;};
 }
 
 local ZIP_CDH_EXTRA_ID = {
