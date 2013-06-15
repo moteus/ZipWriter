@@ -1,3 +1,5 @@
+local HAS_RUNNER = not not lunit
+
 local base64    = require "base64"
 
 function DUMP(lvl, res)
@@ -348,4 +350,4 @@ end
 
 end
 
-lunit.run()
+if not HAS_RUNNER then lunit.run() end
