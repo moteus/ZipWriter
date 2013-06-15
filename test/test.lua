@@ -21,6 +21,7 @@ function LOAD(fname)
 end
 
 local ZipWriter = require "ZipWriter"
+local zutils    = require "ZipWriter.utils"
 local lunit     = require "lunit"
 local tutils    = require "utils"
 local TEST_CASE = tutils.TEST_CASE
@@ -54,7 +55,23 @@ local fileDesc = {
   -- lfs.attributes('modification') 
   mtime    = 1348048902 - 1, -- -1 - Is this bug in winrar?
   exattrib = 32, -- get from GetFileAttributesA
+  platform = 'windows',
 }
+
+local _ENV = TEST_CASE'ZipWriter utils' do
+
+function test_date()
+  local t = assert_table(os.date("*t", fileDesc.mtime))
+  assert_equal(2012, t.year  )
+  assert_equal(09,   t.month )
+  assert_equal(19,   t.day   )
+  assert_equal(01,   t.min   )
+  assert_equal(41,   t.sec   )
+  assert_false(t.isdst)
+  assert_equal(14,   t.hour  )
+end
+
+end
 
 local _ENV = TEST_CASE'ZipWriter read data' do
 

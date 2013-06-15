@@ -639,7 +639,11 @@ function ZipWriter:write(
   else 
     ver_made = IS_WINDOWS and ZIP_VERSION_EXTRACT["2.0"] or ZIP_VERSION_EXTRACT["2.0"]
   end
-  ver_made   = bit.bor( ver_made, IS_WINDOWS and ZIP_VERSION_MADE.FAT32 or ZIP_VERSION_MADE.UNIX )
+  local made_by_win 
+  if not fileDesc.platform then made_by_win = IS_WINDOWS
+  else made_by_win = (fileDesc.platform:lower() == 'windows') end
+
+  ver_made   = bit.bor( ver_made, made_by_win and ZIP_VERSION_MADE.FAT32 or ZIP_VERSION_MADE.UNIX )
 
   if fileDesc.isfile then
     flags = bit.bor(flags, level.flag)
