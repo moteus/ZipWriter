@@ -58,6 +58,16 @@ local fileDesc = {
   platform = 'windows',
 }
 
+local DELTA do
+  local MY_DELTA  = 14400
+  local t1 = os.time(os.date("*t", fileDesc.mtime))
+  local t2 = os.time(os.date("!*t", fileDesc.mtime))
+  local SYS_DELTA = os.difftime(t1, t2)
+  DELTA = MY_DELTA - SYS_DELTA
+end
+
+fileDesc.mtime = fileDesc.mtime + DELTA
+
 local _ENV = TEST_CASE'ZipWriter utils' do
 
 function test_date()
@@ -302,9 +312,9 @@ local fileDesc = {
   istext = true,
   isfile = true,
   isdir  = false,
-  mtime   = 1348048902,
-  ctime   = 1366112737,
-  atime   = 1366378701,
+  mtime   = 1348048902 + DELTA,
+  ctime   = 1366112737 + DELTA,
+  atime   = 1366378701 + DELTA,
   exattrib = 32,
 }
 
