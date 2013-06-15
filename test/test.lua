@@ -316,6 +316,7 @@ local fileDesc = {
   ctime   = 1366112737 + DELTA,
   atime   = 1366378701 + DELTA,
   exattrib = 32,
+  platform = 'windows',
 }
 
 local _ENV = TEST_CASE'ZipWriter AES-256' do
