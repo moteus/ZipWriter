@@ -351,7 +351,7 @@ local function Make(lvl) return function()
   writer:close()
 
   local res = base64.encode( tostring(out) )
-  assert( res == ETALON[ lvl:upper() ] )
+  assert_equal( ETALON[ lvl:upper() ], res )
 end end
 
 test_no      = Make('NO')
