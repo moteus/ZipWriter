@@ -769,7 +769,7 @@ function ZipWriter:write(
     end
   end
 
-  if IS_WINDOWS then
+  if IS_WINDOWS or (fileDesc.platform and (fileDesc.platform:lower() == 'windows')) then
     local m,a,c = fileDesc.mtime,fileDesc.atime,fileDesc.ctime
     if time2filetime and m and a and c then
       local m,a,c = time2filetime(m),time2filetime(a),time2filetime(c)
