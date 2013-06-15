@@ -684,6 +684,7 @@ function ZipWriter:write(
   if fileDesc.isfile then
     -- create stream for file data
     local stream = ZipWriter_as_stream(self)
+    if use_aes then stream = encrypt:stream(stream, fileDesc) end
 
     if fileDesc.data then 
       local data = fileDesc.data
@@ -707,11 +708,8 @@ function ZipWriter:write(
         cdata = data
       end
 
-      if use_aes then stream = encrypt:stream(stream, fileDesc) end
-
       stream:write(cdata)
     else -- use stream
-      if use_aes then stream = encrypt:stream(stream, fileDesc) end
       if method == ZIP_COMPRESSION_METHOD.DEFLATE then
         stream = zip_stream(stream, level.value, method)
       else assert(method == ZIP_COMPRESSION_METHOD.STORE) end

@@ -19,13 +19,13 @@ function LOAD(fname)
 end
 
 local ZipWriter = require "ZipWriter"
-local memfile   = require "memoryfile"
 local lunit     = require "lunit"
 local tutils    = require "utils"
 local TEST_CASE = tutils.TEST_CASE
 local skip      = tutils.skip
+local Stream    = tutils.Stream
 
-local function prequire(m) 
+local function prequire(m)
   local ok, err = pcall(require, m) 
   if not ok then return nil, err end
   return err
@@ -65,7 +65,7 @@ function teardown()
 end
 
 local function Make(lvl)
-  local out    = memfile.open("", "wb")
+  local out = Stream:new()
 
   local writer = ZipWriter.new{
     utf8 = false;
@@ -91,7 +91,7 @@ end
 local _ENV = TEST_CASE'ZipWriter reader' do
 
 local function Make(lvl)
-  local out    = memfile.open("", "wb")
+  local out = Stream:new()
   -- local out    = io.open(".\\out.zip", "wb")
   
   local function reader(i)
@@ -125,7 +125,7 @@ end
 local _ENV = TEST_CASE'ZipWriter sink' do
 
 local function Make(lvl)
-  local out    = memfile.open("", "wb")
+  local out = Stream:new()
 
   local writer = ZipWriter.new{
     utf8 = false;
@@ -219,7 +219,7 @@ function teardown()
 end
 
 local function Make(lvl)
-  local out    = memfile.open("", "wb")
+  local out = Stream:new()
 
   local writer = ZipWriter.new{
     utf8 = false;
@@ -261,7 +261,7 @@ function teardown()
 end
 
 local function Make(lvl)
-  local out    = memfile.open("", "wb")
+  local out = Stream:new()
 
   local writer = ZipWriter.new{
     utf8  = false;
@@ -317,7 +317,7 @@ function teardown()
 end
 
 local function Make(lvl)
-  local out    = memfile.open("", "wb")
+  local out = Stream:new()
 
   local writer = ZipWriter.new{
     utf8 = false;

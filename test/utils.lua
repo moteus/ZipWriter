@@ -11,7 +11,76 @@ local TEST_CASE = function (name)
   end
 end
 
+local function str_replace(str, pos, sub)
+  assert((pos > 0) and (pos <= (#str + 1)))
+  return string.sub(str, 1, pos-1) .. sub .. string.sub(str, pos+#sub)
+end
+
+assert ("abc456789"    == str_replace("123456789", 1,  'abc'))
+assert ("123456abc"    == str_replace("123456789", 7,  'abc'))
+assert ("123456789abc" == str_replace("123456789", 10, 'abc'))
+
+local Stream = {}
+Stream.__index = Stream
+
+function Stream:new()
+  return setmetatable({
+    _pos  = 0;
+    _data = "";
+  }, self)
+end
+
+function Stream:_validate()
+  assert((self._pos >= 0) and (self._pos <= (#self._data)))
+end
+
+function Stream:write(str)
+  self:_validate()
+  self._data = str_replace(self._data, self._pos+1, str)
+  self._pos = self._pos + #str
+  self:_validate()
+  return #str
+end
+
+function Stream:seek(whence, offset)
+  self:_validate()
+
+  offset = offset or 0
+  whence = whence or "cur"
+
+  if     whence == "set" then self._pos = offset
+  elseif whence == "cur" then self._pos = self._pos + offset
+  elseif whence == "end" then self._pos = #self._data + offset
+  else error("Unknow parametr whence: " .. tostring(whence)) end
+
+  if self._pos < 0 then self._pos = 0 
+  elseif self._pos >= #self._data then 
+    self._data = self._data .. ('\0'):rep(#self._data - self._pos)
+  end
+  
+  self:_validate()
+  return self._pos
+end
+
+function Stream:close()
+  
+end
+
+function Stream:__tostring()
+  return self._data
+end
+
+local out = Stream:new()
+
+assert(0 == out:seek())
+assert(9 == out:write("123456789"))
+assert(0 == out:seek("set", 0))
+assert(3 == out:write("abc"))
+assert(3 == out:seek())
+assert("abc456789" == tostring(out))
+
 return {
   TEST_CASE = TEST_CASE;
   skip      = skip;
+  Stream    = Stream;
 }

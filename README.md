@@ -9,7 +9,6 @@ Based on http://wiki.tcl.tk/15158
 - iconv (if not found then file names passed as is)
 - alien/ffi (on Windos detect system default codepage)
 - lunit (only for test)
-- memoryfile (only for test)
 - [AesFileEncrypt] (https://github.com/moteus/lua-AesFileEncrypt) (optional)
 
 ## Supports ##
