@@ -40,11 +40,12 @@ install:
   - sudo luarocks install lua-iconv
   - if [ $LUA = "lua5.2" ]; then
       sudo luarocks install deps/lzlib-0.4.work3-1.rockspec;
+      sudo luarocks install deps/lbase64-0.1-2.rockspec;
     else
       sudo luarocks install lzlib;
+      sudo luarocks install lbase64;
     fi
   - sudo luarocks install deps/struct-1.4-1.rockspec
-  - sudo luarocks install lbase64
   - if [ $LUA = "lua5.1" ]; then
       sudo luarocks install bit32;
     fi
