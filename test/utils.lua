@@ -1,6 +1,7 @@
 local lunit    = require "lunit"
 local skip     = function (msg) return function() lunit.fail("#SKIP: " .. msg) end end
 local IS_LUA52 = _VERSION >= 'Lua 5.2'
+local IS_WINDOWS = package.config:sub(1,1) == '\\'
 
 local TEST_CASE = function (name)
   if not IS_LUA52 then
@@ -79,8 +80,38 @@ assert(3 == out:write("abc"))
 assert(3 == out:seek())
 assert("abc456789" == tostring(out))
 
+-- execute implementation from https://github.com/stevedonovan/Lake
+local function execute (cmd,quiet)
+  if quiet then
+    local null = " > "..(IS_WINDOWS and 'NUL' or '/dev/null').." 2>&1"
+    cmd = cmd .. null
+  end
+  local res1,res2,res2 = os.execute(cmd)
+  if not IS_LUA52 then
+    return res1==0, res1
+  else
+    return not not res1, res2
+  end
+end
+
+local function write_file(fname, data)
+  local h, e = io.open(fname, 'wb+')
+  if not h then return nil, e end
+  h:write(data)
+  h:close()
+  return true
+end
+
+local function test_zip(fname, pwd)
+  local cmd = "7z t "
+  if pwd then cmd = cmd .. " -p" .. pwd .. " " end
+  return execute(cmd .. fname, true)
+end
+
 return {
   TEST_CASE = TEST_CASE;
   skip      = skip;
   Stream    = Stream;
+  test_zip  = test_zip;
+  write_file = write_file;
 }

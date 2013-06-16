@@ -27,6 +27,8 @@ local tutils    = require "utils"
 local TEST_CASE = tutils.TEST_CASE
 local skip      = tutils.skip
 local Stream    = tutils.Stream
+local write_file= tutils.write_file
+local test_zip  = tutils.test_zip
 
 local function prequire(m)
   local ok, err = pcall(require, m) 
@@ -312,14 +314,16 @@ local fileDesc = {
   istext = true,
   isfile = true,
   isdir  = false,
-  mtime   = 1348048902 + DELTA,
-  ctime   = 1366112737 + DELTA,
-  atime   = 1366378701 + DELTA,
+  mtime   = 1348048902,
+  ctime   = 1366112737,
+  atime   = 1366378701,
   exattrib = 32,
   platform = 'windows',
 }
 
 local _ENV = TEST_CASE'ZipWriter AES-256' do
+
+local fname = "./test.zip"
 
 local ETALON = {
   -- identical with 7z, but ntfs_extra field
@@ -332,6 +336,7 @@ end
 
 function teardown()
   fileDesc.data = nil
+  os.remove(fname)
 end
 
 local function Make(lvl) return function()
@@ -351,14 +356,19 @@ local function Make(lvl) return function()
   writer:write('test.txt', fileDesc)
   writer:close()
 
-  local res = base64.encode( tostring(out) )
-  assert_equal( ETALON[ lvl:upper() ], res )
+  if DELTA == 0 and ETALON[ lvl:upper() ] then
+    local res = base64.encode( tostring(out) )
+    assert_equal( ETALON[ lvl:upper() ], res )
+  else
+    assert_true(write_file(fname, tostring(out)))
+    assert_true(test_zip(fname, '123456'))
+  end
 end end
 
 test_no      = Make('NO')
--- test_default = Make('DEFAULT')
--- test_speed   = Make('SPEED')
--- test_best    = Make('BEST')
+test_default = Make('DEFAULT')
+test_speed   = Make('SPEED')
+test_best    = Make('BEST')
 
 end
 
