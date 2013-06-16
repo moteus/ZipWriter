@@ -39,7 +39,7 @@ install:
   - sudo luarocks install https://raw.github.com/moteus/luacrypto/master/rockspecs/luacrypto-git-1.rockspec
   - sudo luarocks install lua-iconv
   - if [ $LUA = "lua5.2" ]; then
-      sudo luarocks install deps/lzlib-0.4.work3-1.rockspec;
+      sudo luarocks install deps/lzlib-scm.mot-0.rockspec;
       sudo luarocks install deps/lbase64-0.1-2.rockspec;
     else
       sudo luarocks install lzlib;

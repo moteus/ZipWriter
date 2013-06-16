@@ -95,7 +95,7 @@ local function execute (cmd,quiet)
 end
 
 local function write_file(fname, data)
-  local h, e = io.open(fname, 'wb+')
+  local h, e = io.open(fname, 'w+b')
   if not h then return nil, e end
   h:write(data)
   h:close()

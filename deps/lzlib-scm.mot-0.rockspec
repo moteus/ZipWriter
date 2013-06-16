@@ -1,7 +1,8 @@
 package="lzlib"
-version="0.4.work3-1"
+version="scm.mot-0"
 source = {
-   url = "http://files.luaforge.net/releases/lzlib/lzlib/lzlib-0.4-work3/lzlib-0.4-work3.tar.gz",
+   url = "https://github.com/moteus/lzlib/archive/master.zip",
+   dir = "lzlib-master",
 }
 description = {
    summary = "Lua bindings to the ZLib compression library",
