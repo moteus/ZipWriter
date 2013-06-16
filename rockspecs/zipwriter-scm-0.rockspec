@@ -17,8 +17,8 @@ description = {
 dependencies = {
   "lua >= 5.1",
   "struct >= 1.2",
-  "bit32",
   "lzlib",
+  -- "bit32",
   -- "luacrypto >= 0.3.0",  -- optional to support aes
   -- "lua-iconv >= 7.0",    -- optional
   -- "alien >= 0.7.0",      -- optional on windows

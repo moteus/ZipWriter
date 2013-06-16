@@ -41,6 +41,9 @@ install:
   - sudo luarocks install lzlib
   - sudo luarocks install deps/struct-1.4-1.rockspec
   - sudo luarocks install lbase64
+  - if [ $LUA = "lua5.1" ]; then
+      sudo luarocks install bit32;
+    fi
   - sudo luarocks make rockspecs/zipwriter-scm-0.rockspec
 
 script: "cd test && lunit.sh -i lua$LUA_SFX test.lua"
