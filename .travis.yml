@@ -29,6 +29,7 @@ before_install:
 
 
 install:
+  - sudo apt-get install p7zip-full
   - sudo apt-get install zlib1g-dev
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
   # supports skip
