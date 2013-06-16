@@ -1,6 +1,9 @@
-Library for creating ZIP archive for Lua 5.1/5.2.
+##Library for creating ZIP archive for Lua 5.1/5.2.
+
 Based on http://wiki.tcl.tk/15158
+
 [![Build Status](https://travis-ci.org/moteus/ZipWriter.png)](https://travis-ci.org/moteus/ZipWriter)
+
 ## Dependences ##
 
 - lzlib
