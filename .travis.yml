@@ -36,7 +36,7 @@ install:
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
   # supports skip
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
-  - sudo luarocks install https://raw.github.com/moteus/luacrypto/master/rockspecs/luacrypto-git-1.rockspec
+  - sudo luarocks install https://raw.github.com/moteus/luacrypto/moteus-rockspec/rockspecs/luacrypto-0.3.2-1.rockspec
   - sudo luarocks install lua-iconv
   - sudo luarocks install deps/lzlib-0.4.work3-1.rockspec;
   - if [ $LUA = "lua5.2" ]; then
