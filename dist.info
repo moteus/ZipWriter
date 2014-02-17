@@ -1,0 +1,19 @@
+name = "ZipWriter"
+version = "0.1.2"
+
+desc = "Library for creating ZIP archive"
+author = "Alexey Melnichuk"
+license = "MIT/X11"
+url = "https://github.com/moteus/ZipWriter"
+maintainer = "Alexey Melnichuk"
+
+depends = {
+  "lua >= 5.1",
+  "struct >= 1.2",
+  "bit32",
+  "lzlib",
+  -- "aesfileencrypt",     -- optional fast aes encryption
+  -- "luacrypto >= 0.3.0", -- optional to support aes
+  -- "lua-iconv >= 7.0",   -- optional to support utf8 names
+  -- "alien >= 0.7.0",     -- optional on windows
+}
