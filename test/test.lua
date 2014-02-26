@@ -149,6 +149,48 @@ test_best    = Make('BEST')
 
 end
 
+local _ENV = TEST_CASE'ZipWriter reader interface' do
+
+function test_context()
+  local out = Stream:new()
+  local writer = ZipWriter.new()
+  writer:open_stream(out)
+
+  local function make_reader()
+    local ctx = {}
+    local i = 0
+    return function(o)
+      if i == 0 then
+        i = 1
+        assert_nil(o)
+        return "data", ctx
+      end
+      assert_equal(ctx, o)
+    end
+  end
+
+  assert_true(writer:write('test.txt', fileDesc, make_reader()))
+  assert_equal(1, writer:close())
+end
+
+function test_error()
+  local out = Stream:new()
+  local writer = ZipWriter.new()
+  writer:open_stream(out)
+
+  local ERR = {}
+
+  local function reader()
+    return nil, ERR
+  end
+
+  local ok, err = assert_nil(writer:write('test.txt', fileDesc, reader))
+  assert_equal(ERR, err)
+  assert_equal(1, writer:close())
+end
+
+end
+
 local _ENV = TEST_CASE'ZipWriter sink' do
 
 local function Make(lvl) return function()

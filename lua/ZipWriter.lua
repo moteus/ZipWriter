@@ -690,6 +690,7 @@ function ZipWriter:write(
   size   = 0
   csize  = 0
 
+  local reader_error -- error from reader (e.g. access error to file)
   if fileDesc.isfile then
     -- create stream for file data
     local stream = ZipWriter_as_stream(self)
@@ -730,6 +731,7 @@ function ZipWriter:write(
         size = size + #chunk
         chunk, ctx = reader(ctx)
       end
+      reader_error = ctx
     end
 
     csize = stream:close()
@@ -806,6 +808,9 @@ function ZipWriter:write(
     utfpath, cdextra, utfcomment
   )
   table.insert(self.private_.headers, cdh)
+
+  if reader_error then return nil, reader_error end
+
   return true
 end
 
