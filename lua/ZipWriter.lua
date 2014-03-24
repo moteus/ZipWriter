@@ -457,6 +457,7 @@ end
 -- @tfield number ctime
 -- @tfield number atime
 -- @tfield number exattrib on Windows it can be result of GetFileAttributes
+-- @tfield string platform
 -- @tfield ?string data file content
 
 ---
@@ -637,13 +638,18 @@ function ZipWriter:write(
   if use_aes then
     ver_made = ZIP_VERSION_EXTRACT["6.3"] -- @encrypt 7z do this
   else 
-    ver_made = IS_WINDOWS and ZIP_VERSION_EXTRACT["2.0"] or ZIP_VERSION_EXTRACT["2.0"]
+    ver_made = ZIP_VERSION_EXTRACT["2.0"]
   end
-  local made_by_win 
-  if not fileDesc.platform then made_by_win = IS_WINDOWS
-  else made_by_win = (fileDesc.platform:lower() == 'windows') end
 
-  ver_made   = bit.bor( ver_made, made_by_win and ZIP_VERSION_MADE.FAT32 or ZIP_VERSION_MADE.UNIX )
+  local platform_made = fileDesc.platform
+  if not platform_made then
+    platform_made = IS_WINDOWS and 'fat32' or 'unix'
+  elseif platform_made:lower() == 'windows' then
+    platform_made = 'fat32' -- for compatability
+  end
+  platform_made = ZIP_VERSION_MADE[platform_made:upper()] or ZIP_VERSION_MADE.UNIX
+
+  ver_made = bit.bor( ver_made, platform_made )
 
   if fileDesc.isfile then
     flags = bit.bor(flags, level.flag)

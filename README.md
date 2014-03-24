@@ -11,7 +11,7 @@ Based on http://wiki.tcl.tk/15158
 - bit32 or bit
 - iconv (if not found then file names passed as is)
 - alien/ffi (on Windos detect system default codepage)
-- lunit (only for test)
+- lunitx (only for test)
 - [AesFileEncrypt] (https://github.com/moteus/lua-AesFileEncrypt) (optional)
 
 ## Supports ##
@@ -33,6 +33,7 @@ function make_reader(fname)
     isdir    = false,
     mtime    = 1348048902, -- lfs.attributes('modification') 
     exattrib = 32,         -- get from GetFileAttributesA
+    platform = 'fat32',    -- `exattrib` is platform dependent
   }
   return desc, desc.isfile and function()
     local chunk = f:read(chunk_size)
