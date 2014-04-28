@@ -1,6 +1,7 @@
 local function prequire(m) 
   local ok, err = pcall(require, m) 
   if not ok then return nil, err end
+  if err == true then err = _G[m] or err end
   return err
 end
 
