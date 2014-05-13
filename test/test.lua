@@ -1,3 +1,5 @@
+pcall(require, "luacov")
+
 local HAS_RUNNER = not not lunit
 
 local base64    = require "base64"

@@ -1,0 +1,30 @@
+return {
+  configfile  = ".luacov";
+
+  statsfile   = "luacov.stats.out";
+
+  reportfile  = "luacov.report.json";
+
+  runreport   = false;
+
+  deletestats = false;
+
+  include = {
+    "/ZipWriter$",
+    "/ZipWriter/.+$",
+  };
+
+  exclude = {
+  };
+
+  coveralls = {
+
+    debug = true;
+
+    pathcorrect = {
+      { "/usr/local/share/lua/5.[12]", "lua" };
+    };
+
+  };
+
+}
