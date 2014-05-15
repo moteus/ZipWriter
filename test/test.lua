@@ -418,4 +418,18 @@ end
 
 end
 
+local AesEncrypt = prequire"ZipWriter.encrypt.aes.AesFileEncrypt"
+
+if AesEncrypt then
+
+local _ENV = TEST_CASE'AesEncrypt self_test' do
+
+function test()
+  AesEncrypt.self_test()
+end
+
+end
+
+end
+
 if not HAS_RUNNER then lunit.run() end

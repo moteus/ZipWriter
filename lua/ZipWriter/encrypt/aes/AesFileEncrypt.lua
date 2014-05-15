@@ -319,5 +319,7 @@ end
 return {
   new = function()
     return AesFileEncrypt:new()
-  end
+  end;
+
+  self_test = AesFileEncrypt.self_test;
 }
