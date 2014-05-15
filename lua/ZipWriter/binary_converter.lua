@@ -55,9 +55,9 @@ local converter = {
   struct_size  = struct_size;
   types        = converter_t;
 }
--- @param art  - тип элемента
--- @param data - бинарное представление массива элементов art
--- @param size - количечтво элементов в массиве (optional)
+-- @param art  - С‚РёРї СЌР»РµРјРµРЅС‚Р°
+-- @param data - Р±РёРЅР°СЂРЅРѕРµ РїСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ РјР°СЃСЃРёРІР° СЌР»РµРјРµРЅС‚РѕРІ art
+-- @param size - РєРѕР»РёС‡РµС‡С‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РІ РјР°СЃСЃРёРІРµ (optional)
 converter.unpack_array = function(art, data, size)
   if not size then
     local elem_size = struct_size(art)
@@ -70,9 +70,9 @@ converter.unpack_array = function(art, data, size)
   return t
 end;
 
--- @param art  - тип элемента
--- @param data - массив элементов art
--- @param size - количечтво элементов в массиве (optional)
+-- @param art  - С‚РёРї СЌР»РµРјРµРЅС‚Р°
+-- @param data - РјР°СЃСЃРёРІ СЌР»РµРјРµРЅС‚РѕРІ art
+-- @param size - РєРѕР»РёС‡РµС‡С‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РІ РјР°СЃСЃРёРІРµ (optional)
 converter.pack_array = function(art, data, size)
   size = size or #data
   local fmt = string.rep(art, size)
