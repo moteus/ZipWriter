@@ -34,8 +34,7 @@ install:
   - sudo apt-get install p7zip-full
   - sudo apt-get install zlib1g-dev
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
-  - sudo luarocks install https://raw.githubusercontent.com/moteus/luacov/moteus-rockspec/rockspecs/luacov-scm.mot-1.rockspec
-  - sudo luarocks install https://raw.githubusercontent.com/moteus/luacov-coveralls/master/rockspecs/luacov-coveralls-scm-0.rockspec
+  - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
   # supports skip
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
   - sudo luarocks install luacrypto
@@ -56,8 +55,6 @@ script: "cd test && lunit.sh -i lua$LUA_SFX test.lua"
 
 after_success:
   - luacov-coveralls
-  - cat luacov.report.json
-  - 'curl -v -H "Content-Type: multipart/related" --form "json_file=@luacov.report.json;type=application/json" https://coveralls.io/api/v1/jobs'
 
 notifications:
   email:

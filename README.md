@@ -4,6 +4,7 @@ Based on http://wiki.tcl.tk/15158
 
 [![Build Status](https://travis-ci.org/moteus/ZipWriter.png)](https://travis-ci.org/moteus/ZipWriter)
 [![Coverage Status](https://coveralls.io/repos/moteus/ZipWriter/badge.png)](https://coveralls.io/r/moteus/ZipWriter)
+[![Licence](http://img.shields.io/badge/Licence-MIT-brightgreen.svg)](LICENCE.txt)
 
 ## Dependences ##
 
