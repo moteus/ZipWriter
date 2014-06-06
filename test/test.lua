@@ -58,7 +58,7 @@ local fileDesc = {
   isdir    = false,
   -- lfs.attributes('modification') 
   mtime    = 1348048902 - 1, -- -1 - Is this bug in winrar?
-  exattrib = 32, -- get from GetFileAttributesA
+  exattrib = {ZipWriter.DOS_FILE_ATTR.ARCH},
   platform = 'windows',
 }
 
@@ -361,7 +361,7 @@ local fileDesc = {
   mtime   = 1348048902,
   ctime   = 1366112737,
   atime   = 1366378701,
-  exattrib = 32,
+  exattrib = {ZipWriter.DOS_FILE_ATTR.ARCH},
   platform = 'windows',
 }
 

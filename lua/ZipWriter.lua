@@ -14,6 +14,7 @@ local ZLIB_DEFAULT_COMPRESSION = zlib.DEFAULT_COMPRESSION  or -1
 
 local sc = stream_converter
 
+local unpack = unpack or table.unpack
 local stdout = io.stdout
 local fmt = string.format
 local function dump_byte(data, n)
@@ -23,6 +24,18 @@ local function dump_byte(data, n)
     if i == 16 then stdout:write('\n') end
   end
   if math.mod(n, 16) ~= 0 then stdout:write('\n') end
+end
+
+local function o(n) return tonumber(n, 8) end
+
+local function orflags(n, t)
+  if not t then return n end
+
+  if type(t) == 'table' then
+    return bit.bor(n, unpack(t, 1, #t))
+  end
+
+  return bit.bor(n, t)
 end
 
 local IS_WINDOWS = package.config:sub(1,1) == '\\'
@@ -321,6 +334,45 @@ local AES_MODE = {
   AES256 = 0x03,
 }
 
+-- Extra file attributes for Unix
+local NIX_FILE_ATTR = {
+  IFIFO  = bit.lshift(o"010000", 16);  -- /* named pipe (fifo) */
+  IFCHR  = bit.lshift(o"020000", 16);  -- /* character special */
+  IFDIR  = bit.lshift(o"040000", 16);  -- /* directory */
+  IFBLK  = bit.lshift(o"060000", 16);  -- /* block special */
+  IFREG  = bit.lshift(o"100000", 16);  -- /* regular */
+  IFLNK  = bit.lshift(o"120000", 16);  -- /* symbolic link */
+  IFSOCK = bit.lshift(o"140000", 16);  -- /* socket */
+
+  ISUID  = bit.lshift(o"004000", 16);  -- /* set user id on execution */
+  ISGID  = bit.lshift(o"002000", 16);  -- /* set group id on execution */
+  ISTXT  = bit.lshift(o"001000", 16);  -- /* sticky bit */
+  IRWXU  = bit.lshift(o"000700", 16);  -- /* RWX mask for owner */
+  IRUSR  = bit.lshift(o"000400", 16);  -- /* R for owner */
+  IWUSR  = bit.lshift(o"000200", 16);  -- /* W for owner */
+  IXUSR  = bit.lshift(o"000100", 16);  -- /* X for owner */
+  IRWXG  = bit.lshift(o"000070", 16);  -- /* RWX mask for group */
+  IRGRP  = bit.lshift(o"000040", 16);  -- /* R for group */
+  IWGRP  = bit.lshift(o"000020", 16);  -- /* W for group */
+  IXGRP  = bit.lshift(o"000010", 16);  -- /* X for group */
+  IRWXO  = bit.lshift(o"000007", 16);  -- /* RWX mask for other */
+  IROTH  = bit.lshift(o"000004", 16);  -- /* R for other */
+  IWOTH  = bit.lshift(o"000002", 16);  -- /* W for other */
+  IXOTH  = bit.lshift(o"000001", 16);  -- /* X for other */
+  ISVTX  = bit.lshift(o"001000", 16);  -- /* save swapped text even after use */
+}
+
+-- Extra file attributes for Unix/FAT32
+local DOS_FILE_ATTR = {
+  NORMAL = 0x00; -- Normal file
+  RDONLY = 0x01; -- Read-only file
+  HIDDEN = 0x02; -- Hidden file
+  SYSTEM = 0x04; -- System file
+  VOLID  = 0x08; -- Volume ID
+  SUBDIR = 0x10; -- Subdirectory
+  ARCH   = 0x20; -- File changed since last archive
+}
+
 local function zip_make_extra(HID, data)
   return stream_converter.pack(STRUCT_CDH_EXTRA_RECORD, HID, #data, data)
 end
@@ -328,7 +380,6 @@ end
 local function zip_extra_pack(HID, struct, ...)
   return zip_make_extra(HID, struct_pack(struct, ...))
 end
-
 
 -------------------------------------------------------------
 -- streams
@@ -456,9 +507,49 @@ end
 -- @tfield number mtime last modification time. If nil then os.clock used.
 -- @tfield number ctime
 -- @tfield number atime
--- @tfield number exattrib on Windows it can be result of GetFileAttributes
+-- @tfield number|table exattrib on Windows it can be result of GetFileAttributes. Also it can be array of flags.
 -- @tfield string platform
 -- @tfield ?string data file content
+--
+-- @see DOS_FILE_ATTR
+-- @see NIX_FILE_ATTR
+
+--- Extra file attributes for Unix
+-- @table NIX_FILE_ATTR
+-- @field IFIFO  named pipe (fifo)
+-- @field IFCHR  character special
+-- @field IFDIR  directory
+-- @field IFBLK  block special
+-- @field IFREG  regular
+-- @field IFLNK  symbolic link
+-- @field IFSOCK socket
+-- @field ISUID  set user id on execution
+-- @field ISGID  set group id on execution
+-- @field ISTXT  sticky bit
+-- @field IRWXU  RWX mask for owner
+-- @field IRUSR  R for owner
+-- @field IWUSR  W for owner
+-- @field IXUSR  X for owner
+-- @field IRWXG  RWX mask for group
+-- @field IRGRP  R for group
+-- @field IWGRP  W for group
+-- @field IXGRP  X for group
+-- @field IRWXO  RWX mask for other
+-- @field IROTH  R for other
+-- @field IWOTH  W for other
+-- @field IXOTH  X for other
+-- @field ISVTX  save swapped text even after use
+
+--- Extra file attributes for Unix/FAT32
+-- @table DOS_FILE_ATTR
+-- @field NORMAL Normal file
+-- @field RDONLY Read-only file
+-- @field HIDDEN Hidden file
+-- @field SYSTEM System file
+-- @field VOLID  Volume ID
+-- @field SUBDIR Subdirectory
+-- @field ARCH   File changed since last archive
+
 
 ---
 -- @type ZipWriter 
@@ -810,7 +901,7 @@ function ZipWriter:write(
     ZIP_SIG.CFH,ver_made,version, flags, method,
     fileDesc_mtime,crc,csize,size,
     #utfpath, #cdextra, #utfcomment,
-    0, inattrib, fileDesc.exattrib or 0x00, offset - self.private_.begin_pos, -- disk number start
+    0, inattrib, orflags(0x00, fileDesc.exattrib), offset - self.private_.begin_pos, -- disk number start
     utfpath, cdextra, utfcomment
   )
   table.insert(self.private_.headers, cdh)
@@ -882,6 +973,10 @@ M.COMPRESSION_LEVEL = setmetatable({
       error("Unknown compression level " .. tostring(lvl),0)
   end
 });
+
+M.NIX_FILE_ATTR = NIX_FILE_ATTR
+
+M.DOS_FILE_ATTR = DOS_FILE_ATTR
 
 --- Create new `ZipWriter` object
 -- @tparam table {utf8 = false, zip64 = false, level = DEFAULT}
