@@ -334,6 +334,17 @@ local AES_MODE = {
   AES256 = 0x03,
 }
 
+-- Based on
+-- http://unix.stackexchange.com/questions/14705/the-zip-formats-external-file-attribute
+
+-- 1000|000|110100000|00000000|00100000
+-- TTTT|sst|rwxrwxrwx|00000000|00ADVSHR
+-- ^^^^|___|_________|________|________ file type as explained above
+--     |^^^|_________|________|________ setuid, setgid, sticky
+--     |   |^^^^^^^^^|________|________ permissions
+--     |   |         |^^^^^^^^|________ This is the "lower-middle byte" your post mentions
+--     |   |         |        |^^^^^^^^ DOS attribute bits
+
 -- Extra file attributes for Unix
 local NIX_FILE_ATTR = {
   IFIFO  = bit.lshift(o"010000", 16);  -- /* named pipe (fifo) */
