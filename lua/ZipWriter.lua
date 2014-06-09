@@ -32,7 +32,7 @@ local function orflags(n, t)
   if not t then return n end
 
   if type(t) == 'table' then
-    return bit.bor(n, unpack(t, 1, #t))
+    return bit.bor(n, unpack(t))
   end
 
   return bit.bor(n, t)
