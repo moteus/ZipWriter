@@ -1,6 +1,8 @@
----
--- @module ZipWriter
+--- Create zip archives.
+--
 -- Based on http://wiki.tcl.tk/15158
+--
+-- @module ZipWriter
 
 local zlib             = require "zlib"
 local utils            = require "ZipWriter.utils"
@@ -627,25 +629,25 @@ function ZipWriter:open_writer(writer, seek)
   return self
 end
 
----
+--
 -- @local
 function ZipWriter:str2utf8(str)
   return (self.private_.use_utf8 and toutf8 or todos)(str)
 end
 
----
+--
 -- @local
 function ZipWriter:use_utf8()
   return self.private_.use_utf8
 end
 
----
+--
 -- @local
 function ZipWriter:use_zip64()
   return self.private_.use_zip64
 end
 
----
+--
 -- @local
 function ZipWriter:seek(...)
   local seek = self.private_.seek
@@ -653,20 +655,20 @@ function ZipWriter:seek(...)
   return seek(...)
 end
 
----
+--
 -- @local
 function ZipWriter:seekable()
   return self:seek('cur', 0) and true
 end
 
----
+--
 -- @local
 function ZipWriter:set_pos(pos)
   self.private_.pos = pos
   return self:seek("set", pos)
 end
 
----
+--
 -- @local
 function ZipWriter:get_pos()
   local pos = self:seek("cur", 0)
@@ -674,14 +676,14 @@ function ZipWriter:get_pos()
   return pos or self.private_.pos
 end
 
----
+--
 -- @local
 function ZipWriter:write_(str)
   self.private_.writer(str)
   self.private_.pos = self.private_.pos + #str
 end
 
----
+--
 -- @local
 function ZipWriter:write_fmt_(...)
   return self:write_(struct_pack(...))
@@ -990,7 +992,10 @@ M.NIX_FILE_ATTR = NIX_FILE_ATTR
 M.DOS_FILE_ATTR = DOS_FILE_ATTR
 
 --- Create new `ZipWriter` object
--- @tparam table {utf8 = false, zip64 = false, level = DEFAULT}
+--
+-- @tparam table options {utf8 = false, zip64 = false, level = DEFAULT}
+--
+-- @see COMPRESSION_LEVEL
 function M.new(...)
   local t = ZipWriter:new(...)
   return t
