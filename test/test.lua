@@ -64,7 +64,9 @@ local fileDesc = {
 
 local DELTA do
   local MY_DELTA  = 14400
-  local t1 = os.time(os.date("*t", fileDesc.mtime))
+  local d1 = os.date("*t", fileDesc.mtime)
+  d1.isdst = false
+  local t1 = os.time(d1)
   local t2 = os.time(os.date("!*t", fileDesc.mtime))
   local SYS_DELTA = os.difftime(t1, t2)
   DELTA = MY_DELTA - SYS_DELTA
@@ -81,7 +83,6 @@ function test_date()
   assert_equal(19,   t.day   )
   assert_equal(01,   t.min   )
   assert_equal(41,   t.sec   )
-  assert_false(t.isdst)
   assert_equal(14,   t.hour  )
 end
 
