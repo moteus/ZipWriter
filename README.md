@@ -26,16 +26,24 @@ Based on http://wiki.tcl.tk/15158
 Make simple archive
 
 ```lua
+local ZipWriter = require "ZipWriter"
+
 function make_reader(fname)
   local f = assert(io.open(fname, 'rb'))
   local chunk_size = 1024
-  local desc = {
+  local desc = { -- `-rw-r-----` on Unix
     istext   = true,
     isfile   = true,
     isdir    = false,
-    mtime    = 1348048902, -- lfs.attributes('modification') 
-    exattrib = 32,         -- get from GetFileAttributesA
-    platform = 'fat32',    -- `exattrib` is platform dependent
+    mtime    = 1348048902, -- lfs.attributes('modification')
+    platform = 'unix',
+    exattrib = {
+      ZipWriter.NIX_FILE_ATTR.IFREG,
+      ZipWriter.NIX_FILE_ATTR.IRUSR,
+      ZipWriter.NIX_FILE_ATTR.IWUSR,
+      ZipWriter.NIX_FILE_ATTR.IRGRP,
+      ZipWriter.DOS_FILE_ATTR.ARCH,
+    },
   }
   return desc, desc.isfile and function()
     local chunk = f:read(chunk_size)
@@ -44,7 +52,6 @@ function make_reader(fname)
   end
 end
 
-local ZipWriter = require "ZipWriter"
 ZipStream = ZipWriter.new()
 ZipStream:open_stream( assert(io.open('readme.zip', 'w+b')), true )
 ZipStream:write('README.md', make_reader('README.md'))

@@ -419,7 +419,7 @@ local NIX_FILE_ATTR = {
   ISVTX  = bit.lshift(o"001000", 16);  -- /* save swapped text even after use */
 }
 
--- Extra file attributes for Unix/FAT32
+-- Extra file attributes for Windows/DOS/FAT32
 local DOS_FILE_ATTR = {
   NORMAL = 0x00; -- Normal file
   RDONLY = 0x01; -- Read-only file
