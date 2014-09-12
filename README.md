@@ -12,7 +12,7 @@ Based on http://wiki.tcl.tk/15158
 - struct
 - bit32 or bit
 - iconv (if not found then file names passed as is)
-- alien/ffi (on Windos detect system default codepage)
+- alien/ffi (on Windows detect system default codepage)
 - lunitx (only for test)
 - [AesFileEncrypt] (https://github.com/moteus/lua-AesFileEncrypt) (optional)
 
