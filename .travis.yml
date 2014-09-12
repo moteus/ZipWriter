@@ -2,48 +2,33 @@ language: erlang
 
 env:
   global:
-    - LUAROCKS_BASE=luarocks-2.2.0beta1
+    - LUAROCKS=2.2.0
   matrix:
-    - LUA=lua5.1 LUA_DEV=liblua5.1-dev LUA_VER=5.1 LUA_SFX=5.1 LUA_INCDIR=/usr/include/lua5.1
-    - LUA=lua5.2 LUA_DEV=liblua5.2-dev LUA_VER=5.2 LUA_SFX=5.2 LUA_INCDIR=/usr/include/lua5.2
-    - LUA=luajit LUA_DEV=libluajit-5.1-dev LUA_VER=5.1 LUA_SFX=jit LUA_INCDIR=/usr/include/luajit-2.0
+    - LUA=lua5.1
+    - LUA=lua5.2
+    - LUA=luajit
 
 branches:
   only:
     - master
 
 before_install:
-  - if [ $LUA = "luajit" ]; then
-      sudo add-apt-repository ppa:mwild1/ppa -y && sudo apt-get update -y;
-    fi
-  - sudo apt-get install $LUA
-  - sudo apt-get install $LUA_DEV
-  - lua$LUA_SFX -v
-  # Install a recent luarocks release
-  - wget http://luarocks.org/releases/$LUAROCKS_BASE.tar.gz
-  - tar zxvpf $LUAROCKS_BASE.tar.gz
-  - cd $LUAROCKS_BASE
-  - ./configure
-    --lua-version=$LUA_VER --lua-suffix=$LUA_SFX --with-lua-include="$LUA_INCDIR"
-  - make build
-  - sudo make install
-  - cd $TRAVIS_BUILD_DIR
-
-install:
   - sudo apt-get install p7zip-full
   - sudo apt-get install zlib1g-dev
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
+  - bash .travis/setup_lua.sh
+  - sudo luarocks install Lua-cURL --server=http://rocks.moonscript.org/dev
   - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
   # supports skip
   - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
   - sudo luarocks install luacrypto
   - sudo luarocks install lua-iconv
-  - sudo luarocks install lzlib
   - sudo luarocks install lbase64
-  - sudo luarocks install struct
   - if [ $LUA = "lua5.1" ]; then
       sudo luarocks install bit32;
     fi
+
+install:
   - sudo luarocks make rockspecs/zipwriter-scm-0.rockspec
 
 script: "cd test && lunit.sh -i lua$LUA_SFX test.lua"
