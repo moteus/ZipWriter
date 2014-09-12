@@ -597,7 +597,7 @@ end
 -- @field IXOTH  X for other
 -- @field ISVTX  save swapped text even after use
 
---- Extra file attributes for Unix/FAT32
+--- Extra file attributes for Windows/DOS/FAT32
 -- @table DOS_FILE_ATTR
 -- @field NORMAL Normal file
 -- @field RDONLY Read-only file
@@ -738,6 +738,7 @@ end
 -- @tparam FILE_DESCRIPTION fileDesc
 -- @tparam ?callable reader must return nil on end of data
 -- @tparam ?string comment
+-- @see FILE_DESCRIPTION
 function ZipWriter:write(
   fileName, fileDesc,
   reader, comment

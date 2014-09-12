@@ -6,6 +6,10 @@ Based on http://wiki.tcl.tk/15158
 [![Coverage Status](https://coveralls.io/repos/moteus/ZipWriter/badge.png)](https://coveralls.io/r/moteus/ZipWriter)
 [![Licence](http://img.shields.io/badge/Licence-MIT-brightgreen.svg)](LICENCE.txt)
 
+## Documentation ##
+
+[Documentation](http://moteus.github.io/ZipWriter)
+
 ## Dependences ##
 
 - lzlib
