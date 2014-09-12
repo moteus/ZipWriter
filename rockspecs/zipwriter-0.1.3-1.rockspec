@@ -1,8 +1,8 @@
 package = "ZipWriter"
-version = "scm-0"
+version = "0.1.3-1"
 source = {
-  url = "https://github.com/moteus/ZipWriter/archive/master.zip",
-  dir = "ZipWriter-master",
+  url = "https://github.com/moteus/ZipWriter/archive/v0.1.3.zip",
+  dir = "ZipWriter-0.1.3",
 }
 
 description = {
