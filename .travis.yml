@@ -1,4 +1,4 @@
-language: erlang
+language: c
 
 env:
   global:
@@ -6,6 +6,7 @@ env:
   matrix:
     - LUA=lua5.1
     - LUA=lua5.2
+    # - LUA=lua5.3
     - LUA=luajit
 
 branches:
@@ -17,10 +18,9 @@ before_install:
   - sudo apt-get install zlib1g-dev
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
   - bash .travis/setup_lua.sh
-  - sudo luarocks install Lua-cURL --server=http://rocks.moonscript.org/dev
-  - sudo luarocks install luacov-coveralls --server=http://rocks.moonscript.org/dev
-  # supports skip
-  - sudo luarocks install https://raw.github.com/moteus/lunit/moteus-skip/rockspecs/lunitx-scm.mot.skip-0.rockspec
+  - sudo luarocks install Lua-cURL         --server=https://rocks.moonscript.org/dev
+  - sudo luarocks install luacov-coveralls --server=https://rocks.moonscript.org/dev
+  - sudo luarocks install lunitx           --server=https://rocks.moonscript.org/manifests/moteus
   - sudo luarocks install luacrypto
   - sudo luarocks install lua-iconv
   - sudo luarocks install lbase64
@@ -31,7 +31,9 @@ before_install:
 install:
   - sudo luarocks make rockspecs/zipwriter-scm-0.rockspec
 
-script: "cd test && lunit.sh -i lua$LUA_SFX test.lua"
+script: 
+  - cd test
+  - lunit.sh test.lua
 
 after_success:
   - luacov-coveralls

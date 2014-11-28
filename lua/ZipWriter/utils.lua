@@ -1,9 +1,3 @@
-local function prequire(m) 
-  local ok, err = pcall(require, m) 
-  if not ok then return nil, err end
-  return err
-end
-
 local bit = require "ZipWriter.bit"
 
 local IS_WINDOWS = (package.config:sub(1,1) == '\\')
