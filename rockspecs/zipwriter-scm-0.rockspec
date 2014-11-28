@@ -18,7 +18,7 @@ dependencies = {
   "lua >= 5.1",
   "struct >= 1.2",
   "lzlib",
-  -- "bit32",
+  -- "bit32",               -- Lua 5.1 only
   -- "aesfileencrypt",      -- optional fast aes encryption
   -- "luacrypto >= 0.3.0",  -- optional to support aes
   -- "lua-iconv >= 7.0",    -- optional
@@ -41,6 +41,7 @@ build = {
     ["ZipWriter" ]                           = "lua/ZipWriter.lua",
     ["ZipWriter.binary_converter"]           = "lua/ZipWriter/binary_converter.lua",
     ["ZipWriter.charset"]                    = "lua/ZipWriter/charset.lua",
+    ["ZipWriter.bit"]                        = "lua/ZipWriter/bit.lua",
     ["ZipWriter.utils"]                      = "lua/ZipWriter/utils.lua",
     ["ZipWriter.encrypt.aes"]                = "lua/ZipWriter/encrypt/aes.lua",
     ["ZipWriter.encrypt.aes.AesFileEncrypt"] = "lua/ZipWriter/encrypt/aes/AesFileEncrypt.lua",

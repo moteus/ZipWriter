@@ -4,7 +4,7 @@ local function prequire(m)
   return err
 end
 
-local bit = assert(prequire "bit32" or prequire "bit", "can not find bit library!")
+local bit = require "ZipWriter.bit"
 
 local IS_WINDOWS = (package.config:sub(1,1) == '\\')
 

@@ -9,6 +9,7 @@ install_lua_module ( ZipWriter.win.cp           lua/ZipWriter/win/cp.lua        
 install_lua_module ( ZipWriter.binary_converter lua/ZipWriter/binary_converter.lua  )
 install_lua_module ( ZipWriter.charset          lua/ZipWriter/charset.lua           )
 install_lua_module ( ZipWriter.utils            lua/ZipWriter/utils.lua             )
+install_lua_module ( ZipWriter.bit              lua/ZipWriter/bit.lua               )
 install_lua_module ( ZipWriter.encrypt.aes      lua/ZipWriter/encrypt/aes.lua       )
 
 install_data ( README.md LICENCE.txt )
