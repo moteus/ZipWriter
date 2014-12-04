@@ -1,5 +1,27 @@
 local bit = require "ZipWriter.bit"
 
+local lua_version do
+
+local lua_version_t
+lua_version = function()
+  if not lua_version_t then 
+    local version = assert(_VERSION)
+    local maj, min = version:match("^Lua (%d+)%.(%d+)$")
+    if maj then                         lua_version_t = {tonumber(maj),tonumber(min)}
+    elseif math.type    then            lua_version_t = {5,3}
+    elseif not math.mod then            lua_version_t = {5,2}
+    elseif table.pack and not pack then lua_version_t = {5,2}
+    else                                lua_version_t = {5,2} end
+  end
+  return lua_version_t[1], lua_version_t[2]
+end
+
+end
+
+local LUA_MAJOR, LUA_MINOR = lua_version()
+
+local LUA_VER_NUM = LUA_MAJOR * 100 + LUA_MINOR
+
 local IS_WINDOWS = (package.config:sub(1,1) == '\\')
 
 local DEFAULT_LOCAL_CP = 'utf-8'
@@ -49,5 +71,7 @@ M.loc2dos        = locale2dos
 M.time2dos       = time2dos
 M.time2filetime  = time2filetime
 M.bit            = bit
+M.IS_WINDOWS     = IS_WINDOWS
+M.LUA_VER_NUM    = LUA_VER_NUM
 
 return M

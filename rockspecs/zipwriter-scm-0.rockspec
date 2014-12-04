@@ -16,8 +16,8 @@ description = {
 
 dependencies = {
   "lua >= 5.1",
-  "struct >= 1.2",
   "lzlib",
+  "struct >= 1.2",       -- For Lua < 5.3
   -- "bit32",               -- Lua 5.1 only
   -- "aesfileencrypt",      -- optional fast aes encryption
   -- "luacrypto >= 0.3.0",  -- optional to support aes

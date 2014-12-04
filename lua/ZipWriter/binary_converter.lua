@@ -1,7 +1,12 @@
-local struct = require "struct"
 local string = require "string"
 
-local struct_unpack, struct_pack, struct_size = assert(struct.unpack), assert(struct.pack), assert(struct.size)
+local struct_unpack, struct_pack, struct_size
+if string.pack then
+  struct_unpack, struct_pack, struct_size = assert(string.unpack), assert(string.pack)
+else
+  local struct = require "struct"
+  struct_unpack, struct_pack, struct_size = assert(struct.unpack), assert(struct.pack), assert(struct.size)
+end
 
 local string_byte, string_char, string_gsub = string.byte, string.char, string.gsub
 local table_concat = table.concat
@@ -41,11 +46,17 @@ local converter_t = {
   int8   = {"b" ,1};
   uint8  = {"B" ,1};
 
-  pchar  = {"c0",0};
 }
-for _, t in pairs(converter_t)do
-  if t[2] > 0 then
-    assert(struct_size(t[1]) == t[2])
+
+if not string.pack then
+  converter_t.pchar  = {"c0",0};
+end
+
+if struct_size then
+  for _, t in pairs(converter_t)do
+    if t[2] > 0 then
+      assert(struct_size(t[1]) == t[2])
+    end
   end
 end
 
@@ -119,7 +130,7 @@ end;
 
 converter.as = function(type_mnemo, val) return struct_pack(type_mnemo,struct_unpack(type_mnemo,val)) end;
 
-do --test converter
+if converter.struct_size then --test converter
   local function cmp_arr(t1,t2)
     if #t1 ~= #t2 then return false end
     for k,v in ipairs(t1)do
@@ -129,7 +140,7 @@ do --test converter
   end
   local function test(types, ar)
     for _,fmt in ipairs(types) do
-      local data = converter.pack_array(fmt,ar)
+      local data = converter.pack_array(fmt, ar)
       assert(converter.struct_size(fmt) * #ar == #data)
       assert(cmp_arr(ar, converter.unpack_array(fmt,data)))
     end

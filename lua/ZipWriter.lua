@@ -84,22 +84,34 @@ local function orflags(n, t)
   return bit.bor(n, t)
 end
 
-local IS_WINDOWS = package.config:sub(1,1) == '\\'
+local IS_WINDOWS  = utils.IS_WINDOWS
+local LUA_VER_NUM = utils.LUA_VER_NUM
 
 local toutf8        = assert(utils.loc2utf8)
 local todos         = assert(utils.loc2dos)
 local time2dos      = assert(utils.time2dos)
 local time2filetime = utils.time2filetime
 
--- local correct_crc   = bit.tobit
-local correct_crc   = assert(stream_converter.as_int32)
+local correct_crc
+if LUA_VER_NUM < 503 then
+  -- we need this because of bug in lzlib 0.4.1
+  -- on system when lua_Integer is 32 bit.
+  -- we need represent crc as signed int
+  correct_crc   = assert(stream_converter.as_int32)
+  assert(correct_crc(0xFFFFFFFF) == -1)
+else
+  -- Assume that in Lua 5.3 lua_Integer is 64 bit
+  -- or there will be fix when move lzlib to Lua 5.3
+  correct_crc   = function(x) return x end
+end
+
 local STRUCT        = assert(stream_converter.STRUCT)
 local struct_pack   = assert(stream_converter.pack)
 local uint8_t       = assert(stream_converter.uint8_t)
 local uint64_t      = assert(stream_converter.le_uint64_t)
 local uint32_t      = assert(stream_converter.le_uint32_t)
 local uint16_t      = assert(stream_converter.le_uint16_t)
-local pchar_t       = assert(stream_converter.pchar_t)
+local pchar_t       = stream_converter.pchar_t
 
 local STRUCT_LOCAL_FILE_HEADER = STRUCT{
   uint32_t; -- signature 0x04034b50           
@@ -431,7 +443,9 @@ local DOS_FILE_ATTR = {
 }
 
 local function zip_make_extra(HID, data)
-  return stream_converter.pack(STRUCT_CDH_EXTRA_RECORD, HID, #data, data)
+  local v = stream_converter.pack(STRUCT_CDH_EXTRA_RECORD, HID, #data, data)
+  if not pchar_t then v = v .. data end
+  return v
 end
 
 local function zip_extra_pack(HID, struct, ...)
@@ -836,6 +850,10 @@ function ZipWriter:write(
     csize, size, #utfpath, #extra,
     utfpath, extra
   )
+  if not pchar_t then
+    self:write_(utfpath)
+    self:write_(extra)
+  end
 
   if self:use_zip64() then
     -- position in stream
@@ -962,6 +980,9 @@ function ZipWriter:write(
     0, inattrib, orflags(0x00, fileDesc.exattrib), offset - self.private_.begin_pos, -- disk number start
     utfpath, cdextra, utfcomment
   )
+  if not pchar_t then
+    cdh = cdh .. utfpath .. cdextra .. utfcomment
+  end
   table.insert(self.private_.headers, cdh)
 
   if reader_error then return nil, reader_error end
@@ -998,6 +1019,10 @@ function ZipWriter:close(comment)
       cdLength,cdOffset,
       zip64_extra
     )
+    if not pchar_t then
+      self:write_(zip64_extra)
+    end
+
     self:write_fmt_(STRUCT_ZIP64_EOCD_LOCATOR,
       ZIP_SIG.ZIP64_EOCD_LOCATOR, 0, zip64_eocd_offset, 0
     )
@@ -1008,6 +1033,9 @@ function ZipWriter:close(comment)
     filenum,filenum,cdLength,cdOffset,
     #comment, comment
   )
+  if not pchar_t then
+    self:write_(comment)
+  end
 
   self.private_.writer()
   return filenum;

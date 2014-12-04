@@ -5,10 +5,11 @@ local function prequire(m)
 end
 
 local crypto = require "crypto"
-local bit    = assert(prequire("bit32") or prequire("bit"))
+local utils  = require "ZipWriter.utils"
 local string = require "string"
 local math   = require "math"
 local table  = require "table"
+local bit    = utils.bit
 
 local PWD_VER_LENGTH    = 2
 local SHA1_DIGEST_SIZE  = 20
