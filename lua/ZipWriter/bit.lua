@@ -68,7 +68,7 @@ else
   end
 
   local function wrap32(f) 
-    return function(...) return f() & 0xFFFFFFFF end
+    return function(...) return f(...) & 0xFFFFFFFF end
   end
 
   local bit32 = {}
