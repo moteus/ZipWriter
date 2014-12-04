@@ -6,7 +6,7 @@ env:
   matrix:
     - LUA=lua5.1
     - LUA=lua5.2
-    # - LUA=lua5.3
+    - LUA=lua5.3
     - LUA=luajit
 
 branches:
@@ -21,15 +21,20 @@ before_install:
   - sudo luarocks install Lua-cURL         --server=https://rocks.moonscript.org/dev
   - sudo luarocks install luacov-coveralls --server=https://rocks.moonscript.org/dev
   - sudo luarocks install lunitx           --server=https://rocks.moonscript.org/manifests/moteus
-  - sudo luarocks install luacrypto
   - sudo luarocks install lua-iconv
-  - sudo luarocks install lbase64
+  - sudo luarocks install lbase64 scm      --server=https://rocks.moonscript.org/manifests/moteus
+  - sudo luarocks install lzlib            --server=https://rocks.moonscript.org/manifests/moteus
   - if [ $LUA = "lua5.1" ]; then
       sudo luarocks install bit32;
     fi
-
+  - if [ $LUA != "lua5.3" ]; then
+      sudo luarocks install struct;
+    fi
+  - if [ $LUA != "lua5.3" ]; then
+      sudo luarocks install luacrypto;
+    fi
 install:
-  - sudo luarocks make rockspecs/zipwriter-scm-0.rockspec
+  - sudo luarocks make rockspecs/zipwriter-scm-0.rockspec --deps-mode=none
 
 script: 
   - cd test
