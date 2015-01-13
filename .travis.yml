@@ -18,12 +18,11 @@ before_install:
   - sudo apt-get install zlib1g-dev
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
   - bash .travis/setup_lua.sh
-  - sudo luarocks install Lua-cURL         --server=https://rocks.moonscript.org/dev
-  - sudo luarocks install luacov-coveralls --server=https://rocks.moonscript.org/dev
-  - sudo luarocks install lunitx           --server=https://rocks.moonscript.org/manifests/moteus
+  - sudo luarocks install luacov-coveralls
+  - sudo luarocks install lunitx
   - sudo luarocks install lua-iconv
-  - sudo luarocks install lbase64 scm      --server=https://rocks.moonscript.org/manifests/moteus
-  - sudo luarocks install lzlib            --server=https://rocks.moonscript.org/manifests/moteus
+  - sudo luarocks install lbase64 scm --server=https://rocks.moonscript.org/manifests/moteus
+  - sudo luarocks install lzlib
   - if [ $LUA = "lua5.1" ]; then
       sudo luarocks install bit32;
     fi
