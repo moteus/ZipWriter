@@ -1,5 +1,5 @@
 name = "ZipWriter"
-version = "0.1.2"
+version = "0.1.4"
 
 desc = "Library for creating ZIP archive"
 author = "Alexey Melnichuk"

@@ -14,8 +14,7 @@ branches:
     - master
 
 before_install:
-  - sudo apt-get install p7zip-full
-  - sudo apt-get install zlib1g-dev
+  - sudo apt-get install p7zip-full zlib1g-dev
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
   - bash .travis/setup_lua.sh
   - sudo luarocks install luacov-coveralls
@@ -32,6 +31,7 @@ before_install:
   - if [ $LUA != "lua5.3" ]; then
       sudo luarocks install luacrypto;
     fi
+
 install:
   - sudo luarocks make rockspecs/zipwriter-scm-0.rockspec --deps-mode=none
 
