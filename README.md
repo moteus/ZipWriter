@@ -13,12 +13,12 @@ Based on http://wiki.tcl.tk/15158
 ## Dependences ##
 
 - lzlib
-- struct
-- bit32 or bit
-- iconv (if not found then file names passed as is)
-- alien/ffi (on Windows detect system default codepage)
-- lunitx (only for test)
+- struct (only for Lua < 5.3)
+- bit32 or bit (only for Lua = 5.1)
+- iconv (if not found then file names passed as is) (optional)
+- alien/ffi (on Windows detect system default codepage) (optional)
 - [AesFileEncrypt] (https://github.com/moteus/lua-AesFileEncrypt) (optional)
+- lunitx (only for test)
 
 ## Supports ##
 - write to non seekable stream
