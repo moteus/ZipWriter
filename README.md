@@ -12,13 +12,19 @@ Based on http://wiki.tcl.tk/15158
 
 ## Dependences ##
 
+### Core ###
 - [lzlib](https://luarocks.org/modules/hisham/lzlib)
 - [struct](https://luarocks.org/modules/luarocks/struct) (only for Lua < 5.3)
 - [bit32](https://luarocks.org/modules/siffiejoe/bit32) (only for Lua = 5.1)
-- [iconv](https://luarocks.org/modules/luarocks/lua-iconv) (if not found then file names passed as is) (optional)
-- [alien](https://luarocks.org/modules/mascarenhas/alien) or [ffi](https://github.com/jmckaskill/luaffi)/[ffi](http://luajit.org/ext_ffi.html) (on Windows detect system default codepage) (optional)
-- [AesFileEncrypt] (https://github.com/moteus/lua-AesFileEncrypt) (optional)
-- [lunitx](https://luarocks.org/modules/dougcurrie/lunitx) (only for test)
+
+### Optional ###
+- [iconv](https://luarocks.org/modules/luarocks/lua-iconv) (if not found then file names passed as is)
+- [alien](https://luarocks.org/modules/mascarenhas/alien) or [ffi](https://github.com/jmckaskill/luaffi)/[ffi](http://luajit.org/ext_ffi.html) (on Windows detect system default codepage)
+- [AesFileEncrypt] (https://github.com/moteus/lua-AesFileEncrypt)
+
+### Test ###
+- [lunitx](https://luarocks.org/modules/dougcurrie/lunitx)
+- [lbase64](https://luarocks.org/modules/ignacio/lbase64)
 
 ## Supports ##
 - write to non seekable stream
