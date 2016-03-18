@@ -1,46 +1,75 @@
 language: c
 
-env:
-  global:
-    - LUAROCKS=2.2.0
-  matrix:
-    - LUA=lua5.1
-    - LUA=lua5.2
-    - LUA=lua5.3
-    - LUA=luajit
+python:
+  - "2.7"
+
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - zlib1g-dev
+      - p7zip-full
+
+matrix:
+  include:
+    - compiler: ": Lua51"
+      env: LUA="lua 5.1"
+    - compiler: ": Lua52"
+      env: LUA="lua 5.2"
+    - compiler: ": Lua53"
+      env: LUA="lua 5.3"
+    - compiler: ": LuaJIT20"
+      env: LUA="luajit 2.0"
+    - compiler: ": LuaJIT21"
+      env: LUA="luajit 2.1"
+
+cache:
+  directories:
+    - here
+    - $HOME/.cache/pip
 
 branches:
   only:
     - master
 
 before_install:
-  - sudo apt-get install p7zip-full zlib1g-dev
-  - sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/
-  - bash .travis/setup_lua.sh
-  - sudo luarocks install luacov-coveralls
-  - sudo luarocks install lunitx
-  - sudo luarocks install lua-iconv
-  - sudo luarocks install lbase64 scm --server=https://rocks.moonscript.org/manifests/moteus
-  - sudo luarocks install lzlib
-  - if [ $LUA = "lua5.1" ]; then
-      sudo luarocks install bit32;
-    fi
-  - if [ $LUA != "lua5.3" ]; then
-      sudo luarocks install struct;
-    fi
-  - if [ $LUA != "lua5.3" ]; then
-      sudo luarocks install luacrypto;
-    fi
+  - export CC=gcc
+  # install Lua
+  - pip install --user hererocks
+  - hererocks here -r^ --$LUA
+  - export PATH=$PATH:$PWD/here/bin
 
 install:
-  - sudo luarocks make rockspecs/zipwriter-scm-0.rockspec --deps-mode=none
+  - if [ "$LUA" == "lua 5.1" ]; then
+      luarocks show bit32 || luarocks install bit32;
+    fi
+  - if [ "$LUA" != "lua 5.3" ]; then
+      luarocks show struct || luarocks install struct;
+    fi
+  - if [ "$LUA" != "lua 5.3" ]; then
+      luarocks show luacrypto || luarocks install luacrypto;
+    fi
+  - luarocks make rockspecs/zipwriter-scm-0.rockspec --deps-mode=none
 
-script: 
+before_script:
+  - luarocks show lunitx            || luarocks install lunitx
+  - luarocks show luacov-coveralls  || luarocks install luacov-coveralls
+  - luarocks show lbase64           || luarocks install lbase64
+  - luarocks remove lua-zlib        || echo dummy
+
+script:
   - cd test
-  - lunit.sh test.lua
+  - luarocks install lzlib && lunit.sh test.lua
+  - if [ "$LUA" != "lua 5.3" ]; then
+    luarocks remove lzlib || echo dummy;
+    fi
+  - if [ "$LUA" != "lua 5.3" ]; then
+    luarocks install lua-zlib && lunit.sh test.lua;
+    fi
 
 after_success:
-  - luacov-coveralls
+  - luacov-coveralls -v
 
 notifications:
   email:

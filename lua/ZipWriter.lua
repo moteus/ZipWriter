@@ -484,6 +484,35 @@ local function ZipWriter_as_stream(stream)
   }
 end
 
+local function zlib_name(zlib)
+  if zlib._VERSION and string.find(zlib._VERSION, 'lua-zlib', nil, true) then
+    return 'lua-zlib'
+  end
+
+  if zlib._VERSION and string.find(zlib._VERSION, 'lzlib', nil, true) then
+    return 'lzlib'
+  end
+end
+
+local z_init_crc32, z_crc32 = zlib.crc32
+
+local z_lib_name = assert(zlib_name(zlib), 'Unsupported zlib Lua binding')
+
+if z_lib_name == 'lzlib' then
+
+z_crc32 = function(ctx, data)
+  ctx = zlib.crc32(correct_crc(ctx), data)
+  return ctx, ctx
+end
+
+elseif z_lib_name == 'lua-zlib' then
+
+z_crc32 = function(ctx, data)
+  return ctx, ctx(data)
+end
+
+end
+
 -- 
 local function zip_stream(stream, level, method)
 
@@ -523,17 +552,36 @@ local function zip_stream(stream, level, method)
     return self.stream:close()
   end
 
-  local zstream = {
-    zd = assert(zlib.deflate(writer, level, method))
-  }
-  
-  function zstream:write(chunk)
-    assert(self.zd:write(chunk))
-  end
+  local zstream
+  if z_lib_name == 'lzlib' then  
+    zstream = {
+      zd = assert(zlib.deflate(writer, level, method))
+    }
 
-  function zstream:close()
-    self.zd:close()
-    return writer:close()
+    function zstream:write(chunk)
+      assert(self.zd:write(chunk))
+    end
+
+    function zstream:close()
+      self.zd:close()
+      return writer:close()
+    end
+  elseif z_lib_name == 'lua-zlib' then
+    assert(method == ZIP_COMPRESSION_METHOD.DEFLATE, 'lua-zlib support only deflated method')
+    zstream = {
+      zd = assert(zlib.deflate(level))
+    }
+
+    function zstream:write(chunk)
+      chunk = assert(self.zd(chunk))
+      writer:write(chunk)
+    end
+
+    function zstream:close()
+      local chunk = self.zd('', 'finish')
+      if chunk and #chunk > 0 then writer:write(chunk) end
+      return writer:close()
+    end
   end
 
   return zstream
@@ -768,7 +816,8 @@ function ZipWriter:write(
 
   local cdextra    = "" -- to central directory
   local extra      = ""
-  local crc        = zlib.crc32()
+  local crc        = 0
+  local crc_ctx    = z_init_crc32()
   local seekable   = self:seekable()
 
   local encrypt    = fileDesc.encrypt or self.private_.encrypt
@@ -872,7 +921,7 @@ function ZipWriter:write(
     if fileDesc.data then 
       local data = fileDesc.data
       size = #data
-      crc = zlib.crc32(crc, data)
+      crc_ctx, crc = z_crc32(crc_ctx, data)
 
       local cdata
       if method == ZIP_COMPRESSION_METHOD.DEFLATE then
@@ -899,7 +948,7 @@ function ZipWriter:write(
 
       local chunk, ctx = reader()
       while(chunk)do
-        crc = zlib.crc32(correct_crc(crc), chunk)
+        crc_ctx, crc = z_crc32(crc_ctx, chunk)
         stream:write(chunk)
         size = size + #chunk
         chunk, ctx = reader(ctx)

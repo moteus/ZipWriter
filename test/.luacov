@@ -19,10 +19,8 @@ return {
 
   coveralls = {
 
-    debug = true;
-
     pathcorrect = {
-      { "/usr/local/share/lua/5.%d", "lua" };
+      {"^.-[/\\]share[/\\]lua[/\\]5.%d", "lua"};
     };
 
   };
