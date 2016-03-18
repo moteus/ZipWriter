@@ -13,7 +13,7 @@ Based on http://wiki.tcl.tk/15158
 ## Dependences ##
 
 ### Core ###
-- [lzlib](https://luarocks.org/modules/hisham/lzlib)
+- [lzlib](https://luarocks.org/modules/hisham/lzlib) or [lua-zlib](https://luarocks.org/modules/brimworks/lua-zlib)
 - [struct](https://luarocks.org/modules/luarocks/struct) (only for Lua < 5.3)
 - [bit32](https://luarocks.org/modules/siffiejoe/bit32) (only for Lua = 5.1)
 
