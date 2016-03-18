@@ -10,11 +10,13 @@ return {
   deletestats = false;
 
   include = {
-    "/ZipWriter$",
-    "/ZipWriter/.+$",
+    "ZipWriter",
+    "ZipWriter.*",
   };
 
   exclude = {
+    "lunit";
+    "lunit.*";
   };
 
   coveralls = {
