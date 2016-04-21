@@ -47,11 +47,11 @@ install:
   - if [ "$LUA" != "lua 5.3" ]; then
       luarocks show struct || luarocks install struct;
     fi
-  - if [ "$LUA" != "lua 5.3" ]; then
+  - if [ "$LUA" == "lua 5.1" ]; then
       luarocks show luacrypto || luarocks install luacrypto;
     fi
-  - if [ "$LUA" == "lua 5.3" ]; then
-      luarocks show openssl || luarocks install openssl;
+  - if [ "$LUA" != "lua 5.1" ]; then
+      luarocks show openssl || bash .travis/setup_openssl.sh;
     fi
   - luarocks make rockspecs/zipwriter-scm-0.rockspec --deps-mode=none
 
