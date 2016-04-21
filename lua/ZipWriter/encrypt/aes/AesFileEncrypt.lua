@@ -4,12 +4,56 @@ local function prequire(m)
   return err
 end
 
-local crypto = require "crypto"
+local crypto, openssl
+
+crypto = prequire "crypto"
+if not crypto then openssl = require "openssl" end
+
 local utils  = require "ZipWriter.utils"
 local string = require "string"
 local math   = require "math"
 local table  = require "table"
 local bit    = utils.bit
+
+local ossl = {} do
+
+if openssl then
+  local hmac_mt = {} hmac_mt.__index = hmac_mt
+  function hmac_mt:update(s)  self._ctx:update(s) return self   end
+  function hmac_mt:reset(s)   self._ctx:reset()   return self   end
+  function hmac_mt:final(s,r) return self._ctx:final(s or '', r)end
+
+  ossl.hmac_new = function(hash, pwd)
+    return setmetatable({_ctx = openssl.hmac.new(hash, pwd)}, hmac_mt)
+  end
+
+  ossl.random_bytes = function(n)
+    return openssl.random(n)
+  end
+
+  ossl.encrypt = function(alg, input, key, iv)
+    return openssl.cipher.encrypt(alg, input, key, iv)
+  end
+
+  ossl.hex = openssl.hex
+
+elseif crypto then
+  ossl.hmac_new = function(hash, pwd)
+    return crypto.hmac.new(hash, pwd)
+  end
+
+  ossl.random_bytes = function(n)
+    return openssl.random(n)
+  end
+
+  ossl.encrypt = function(alg, input, key, iv)
+    return crypto.encrypt(alg, input, key, iv)
+  end
+
+  ossl.hex = crypto.hex
+end
+
+end
 
 local PWD_VER_LENGTH    = 2
 local SHA1_DIGEST_SIZE  = 20
@@ -33,7 +77,7 @@ local function derive_key(pwd, salt, iter, key_len)
   local key = {}
   local uu, u2, ux = {}, {}, {}
   local n_blk = math.floor(1 + (key_len - 1) / SHA1_DIGEST_SIZE)
-  local c3 = crypto.hmac.new('sha1', pwd)
+  local c3 = ossl.hmac_new('sha1', pwd)
 
   for i = 1, n_blk do
     for j = 1, SHA1_DIGEST_SIZE do ux[j], uu[j] = 0 end
@@ -96,7 +140,7 @@ function AesFileEncrypt:open(mode, pwd, salt)
   self.private_.mode = assert(AES_MODES[mode], 'unknown mode: ' .. mode)
 
   assert(not self.private_.salt, "alrady opened")
-  salt = salt or crypto.rand.bytes(self.private_.mode.salt)
+  salt = salt or ossl.random_bytes(self.private_.mode.salt)
   assert(#salt == self.private_.mode.salt, 'Expected: ' .. self.private_.mode.salt .. ' got: ' .. #salt )
   self.private_.salt = salt
   local key_len = self.private_.mode.key
@@ -107,7 +151,7 @@ function AesFileEncrypt:open(mode, pwd, salt)
   local mac_key = H(key, 1 + key_len,  2 * key_len)
   local pwd_ver = H(key, 1 + 2 * key_len, 2 * key_len + PWD_VER_LENGTH)
 
-  local mac     = crypto.hmac.new('sha1', mac_key)
+  local mac     = ossl.hmac_new('sha1', mac_key)
   local nonce   = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
   
   self.private_.mac     = mac
@@ -162,12 +206,12 @@ function AesFileEncrypt:update_impl(encrypt, msg, len)
   for b, chunk in chunks(msg, chunk_size, len) do
     if not encrypt then mac:update(chunk) end
     inc_nonce(nonce)
-    local tmp = crypto.encrypt(aes_name, H(nonce), aes_key)
+    local tmp = ossl.encrypt(aes_name, H(nonce), aes_key)
     assert(#tmp >= chunk_size)
     for i = 1, #chunk do buf[i] = bit.bxor( sbyte(chunk, i), sbyte(tmp, i) ) end
     local enc = H(buf)
     if encrypt then mac:update(enc) end
-    if writer then writer(enc) else table.insert(data, enc) end
+    if writer then writer(enc) else data[#data + 1] = enc end
   end
   if not writer then return table.concat(data) end
 end
@@ -306,8 +350,8 @@ local function test_AesFileEncrypt()
   fenc:encrypt(data)
   local mac_ = fenc:close()
   edata = table.concat(edata)
-  assert(mac == crypto.hex(mac_), 'Expected: `' .. mac ..'` got: `' .. crypto.hex(mac_) .. '`')
-  assert(etalon == crypto.hex(edata), 'Expected: `' .. etalon ..'` got: `' .. crypto.hex(edata) .. '`')
+  assert(mac == ossl.hex(mac_), 'Expected: `' .. mac ..'` got: `' .. ossl.hex(mac_) .. '`')
+  assert(etalon == ossl.hex(edata), 'Expected: `' .. etalon ..'` got: `' .. ossl.hex(edata) .. '`')
 end
 
 function AesFileEncrypt.self_test()

@@ -50,6 +50,9 @@ install:
   - if [ "$LUA" != "lua 5.3" ]; then
       luarocks show luacrypto || luarocks install luacrypto;
     fi
+  - if [ "$LUA" == "lua 5.3" ]; then
+      luarocks show openssl || luarocks install openssl;
+    fi
   - luarocks make rockspecs/zipwriter-scm-0.rockspec --deps-mode=none
 
 before_script:
