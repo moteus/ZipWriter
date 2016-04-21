@@ -1095,7 +1095,7 @@ end
 
 local rawget, upper, error, tostring, setmetatable = rawget, string.upper, error,tostring, setmetatable
 
-local M = {}
+local M = require "ZipWriter.module"
 
 M.COMPRESSION_LEVEL = setmetatable({
     NO       = assert(ZIP_COMPRESSION_LEVEL.NO_COMPRESSION);

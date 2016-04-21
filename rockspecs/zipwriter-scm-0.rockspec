@@ -6,7 +6,7 @@ source = {
 }
 
 description = {
-  summary = "Library for creating ZIP archive for Lua 5.1/5.2",
+  summary = "Library for creating ZIP archive for Lua",
   homepage = "https://github.com/moteus/ZipWriter",
   detailed = [[This package provides a library to create zip archives.
   This library support non seekable streams (e.g. socket), ZIP64 format and AES encrypting.
@@ -15,10 +15,10 @@ description = {
 }
 
 dependencies = {
-  "lua >= 5.1",
+  "lua >= 5.1, < 5.4",
   -- "lzlib",
   -- "lua-zlib",
-  "struct >= 1.2",       -- For Lua < 5.3
+  -- "struct >= 1.2",       -- For Lua < 5.3
   -- "bit32",               -- Lua 5.1 only
   -- "aesfileencrypt",      -- optional fast aes encryption
   -- "luacrypto >= 0.3.0",  -- optional to support aes
@@ -40,6 +40,7 @@ build = {
 
   modules = {
     ["ZipWriter" ]                           = "lua/ZipWriter.lua",
+    ["ZipWriter.module"]                     = "lua/ZipWriter/module.lua",
     ["ZipWriter.binary_converter"]           = "lua/ZipWriter/binary_converter.lua",
     ["ZipWriter.charset"]                    = "lua/ZipWriter/charset.lua",
     ["ZipWriter.bit"]                        = "lua/ZipWriter/bit.lua",

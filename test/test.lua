@@ -32,6 +32,13 @@ local Stream    = tutils.Stream
 local write_file= tutils.write_file
 local test_zip  = tutils.test_zip
 
+print("------------------------------------")
+print("Module    name: " .. ZipWriter._NAME);
+print("Module version: " .. ZipWriter._VERSION);
+print("Lua    version: " .. (_G.jit and _G.jit.version or _G._VERSION))
+print("------------------------------------")
+print("")
+
 local function prequire(m)
   local ok, err = pcall(require, m) 
   if not ok then return nil, err end
