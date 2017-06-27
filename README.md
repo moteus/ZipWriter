@@ -1,4 +1,4 @@
-##Library for creating ZIP archive for Lua 5.1/5.2.
+# Library for creating ZIP archive for Lua 5.1/5.2/5.3 #
 
 Based on http://wiki.tcl.tk/15158
 
@@ -138,8 +138,3 @@ ZipStream = ZipWriter.new{
 -- as before
 
 ```
-
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/moteus/zipwriter/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
