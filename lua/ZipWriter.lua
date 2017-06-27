@@ -913,7 +913,7 @@ function ZipWriter:write(
   csize  = 0
 
   local reader_error -- error from reader (e.g. access error to file)
-  if fileDesc.isfile then
+  if fileDesc.isfile or fileDesc.data then
     -- create stream for file data
     local stream = ZipWriter_as_stream(self)
     if use_aes then stream = encrypt:stream(stream, fileDesc) end
